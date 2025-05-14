@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 
-declare_id!("FPV9rj8nYNDA9We4PRxYcQUkHxTWxzjFsMr6id6H5XDi");
+declare_id!("EyCuwEKWtrb1tZyN9Hc7CcufoQDKTMzRUEXeJWYRSADT");
 
 pub mod instructions;
-pub mod utils;
 pub use instructions::*;
+pub mod utils;
 pub use utils::*;
 
 #[program]
@@ -18,13 +18,32 @@ pub mod spl {
         symbol: String,
         uri: String
     ) -> Result<()> {
-        let _ = instructions::handler(ctx, decimals, name, symbol, uri);
-        Ok(())
+        instructions::handler(ctx, decimals, name, symbol, uri)
     }
 
     pub fn check_mint_extensions_constraints(
         _ctx: Context<CheckMintExtensionConstraints>
     ) -> Result<()> {
         Ok(())
+    }
+
+    pub fn mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
+        instructions::mint_tokens(ctx, amount)
+    }
+
+    pub fn burn_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
+        instructions::burn_tokens(ctx, amount)
+    }
+
+    pub fn close_token_account(ctx: Context<CloseTokenAccount>) -> Result<()> {
+        instructions::close_token_account(ctx)
+    }
+
+    pub fn freeze_token_account(ctx: Context<FreezeTokenAccount>) -> Result<()> {
+        instructions::freeze_token_account(ctx)
+    }
+
+    pub fn thaw_token_account(ctx: Context<ThawTokenAccount>) -> Result<()> {
+        instructions::thaw_token_account(ctx)
     }
 }

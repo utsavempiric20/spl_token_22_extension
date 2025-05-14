@@ -11,6 +11,14 @@ use anchor_spl::{
             permanent_delegate::PermanentDelegate,
             transfer_hook::TransferHook,
         },
+        Burn,
+        burn,
+        close_account,
+        CloseAccount,
+        FreezeAccount,
+        freeze_account,
+        ThawAccount,
+        thaw_account,
         MintTo,
     },
     token_interface::{
@@ -28,51 +36,79 @@ use crate::utils::*;
 
 pub fn handler(
     ctx: Context<CreateMintAccount>,
-    decimals: u8,
+    _decimals: u8,
     name: String,
     symbol: String,
     uri: String
 ) -> Result<()> {
     ctx.accounts.initialize_token_metadata(name.clone(), symbol.clone(), uri.clone())?;
     ctx.accounts.mint.reload()?;
-    let mint_data = &mut ctx.accounts.mint.to_account_info();
-    let metadata = get_mint_extensible_extension_data::<TokenMetadata>(mint_data)?;
-    assert_eq!(metadata.mint, ctx.accounts.mint.key());
-    assert_eq!(metadata.name, name);
-    assert_eq!(metadata.symbol, symbol);
-    assert_eq!(metadata.uri, uri);
-    let metadata_pointer = get_mint_extension_data::<MetadataPointer>(mint_data)?;
-    let mint_key: Option<Pubkey> = Some(ctx.accounts.mint.key());
-    let authority_key: Option<Pubkey> = Some(ctx.accounts.authority.key());
-    assert_eq!(metadata_pointer.metadata_address, OptionalNonZeroPubkey::try_from(mint_key)?);
-    assert_eq!(metadata_pointer.authority, OptionalNonZeroPubkey::try_from(authority_key)?);
-    let permanent_delegate = get_mint_extension_data::<PermanentDelegate>(mint_data)?;
-    assert_eq!(permanent_delegate.delegate, OptionalNonZeroPubkey::try_from(authority_key)?);
-    let close_authority = get_mint_extension_data::<MintCloseAuthority>(mint_data)?;
-    assert_eq!(close_authority.close_authority, OptionalNonZeroPubkey::try_from(authority_key)?);
-    let transfer_hook = get_mint_extension_data::<TransferHook>(mint_data)?;
-    let program_id: Option<Pubkey> = Some(ctx.program_id.key());
-    assert_eq!(transfer_hook.authority, OptionalNonZeroPubkey::try_from(authority_key)?);
-    assert_eq!(transfer_hook.program_id, OptionalNonZeroPubkey::try_from(program_id)?);
-    let group_member_pointer = get_mint_extension_data::<GroupMemberPointer>(mint_data)?;
-    assert_eq!(group_member_pointer.authority, OptionalNonZeroPubkey::try_from(authority_key)?);
-    assert_eq!(group_member_pointer.member_address, OptionalNonZeroPubkey::try_from(mint_key)?);
+
     update_account_lamports_to_minimum_balance(
         ctx.accounts.mint.to_account_info(),
         ctx.accounts.payer.to_account_info(),
         ctx.accounts.system_program.to_account_info()
     )?;
 
-    let amount: u64 = 1_000_000 * (10u64).pow(decimals as u32);
+    Ok(())
+}
 
+pub fn mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(),
-        to: ctx.accounts.mint_token_account.to_account_info(),
+        to: ctx.accounts.to.to_account_info(),
         authority: ctx.accounts.authority.to_account_info(),
     };
     let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
     mint_to(cpi_ctx, amount)?;
+    Ok(())
+}
 
+/// Burn `amount` tokens from `from`.
+pub fn burn_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
+    let cpi_accounts = Burn {
+        mint: ctx.accounts.mint.to_account_info(),
+        from: ctx.accounts.from.to_account_info(),
+        authority: ctx.accounts.authority.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+    burn(cpi_ctx, amount)?;
+    Ok(())
+}
+
+/// Close `account`, sending its lamports to `destination`.
+pub fn close_token_account(ctx: Context<CloseTokenAccount>) -> Result<()> {
+    let cpi_accounts = CloseAccount {
+        account: ctx.accounts.account.to_account_info(),
+        destination: ctx.accounts.destination.to_account_info(),
+        authority: ctx.accounts.authority.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+    close_account(cpi_ctx)?;
+    Ok(())
+}
+
+/// Freeze `account` (preventing transfers/burns) under `mint`.
+pub fn freeze_token_account(ctx: Context<FreezeTokenAccount>) -> Result<()> {
+    let cpi_accounts = FreezeAccount {
+        account: ctx.accounts.account.to_account_info(),
+        mint: ctx.accounts.mint.to_account_info(),
+        authority: ctx.accounts.freeze_authority.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+    freeze_account(cpi_ctx)?;
+    Ok(())
+}
+
+/// Thaw (unfreeze) `account` under `mint`.
+pub fn thaw_token_account(ctx: Context<ThawTokenAccount>) -> Result<()> {
+    let cpi_accounts = ThawAccount {
+        account: ctx.accounts.account.to_account_info(),
+        mint: ctx.accounts.mint.to_account_info(),
+        authority: ctx.accounts.freeze_authority.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+    thaw_account(cpi_ctx)?;
     Ok(())
 }
 
@@ -81,7 +117,7 @@ impl<'info> CreateMintAccount<'info> {
         let cpi_accounts = TokenMetadataInitialize {
             token_program_id: self.token_program.to_account_info(),
             mint: self.mint.to_account_info(),
-            metadata: self.mint.to_account_info(), // metadata account is the mint, since data is stored in mint
+            metadata: self.mint.to_account_info(),
             mint_authority: self.authority.to_account_info(),
             update_authority: self.authority.to_account_info(),
         };
@@ -143,7 +179,6 @@ pub struct CreateMintAccount<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction()]
 pub struct CheckMintExtensionConstraints<'info> {
     #[account(mut)]
     /// CHECK: can be any account
@@ -159,4 +194,65 @@ pub struct CheckMintExtensionConstraints<'info> {
         extensions::permanent_delegate::delegate = authority
     )]
     pub mint: Box<InterfaceAccount<'info, Mint>>,
+}
+
+#[derive(Accounts)]
+pub struct MintTokens<'info> {
+    #[account(mut)]
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    /// The token account to receive newly minted tokens
+    #[account(mut)]
+    pub to: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// Must match the mint’s authority
+    pub authority: Signer<'info>,
+    pub token_program: Program<'info, Token2022>,
+}
+
+#[derive(Accounts)]
+pub struct BurnTokens<'info> {
+    #[account(mut)]
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    /// The token account to burn from (must have sufficient balance)
+    #[account(mut)]
+    pub from: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// Must match the mint’s authority (or the account’s delegate)
+    pub authority: Signer<'info>,
+    pub token_program: Program<'info, Token2022>,
+}
+
+#[derive(Accounts)]
+pub struct CloseTokenAccount<'info> {
+    /// The token account to close (must be empty)
+    #[account(mut)]
+    pub account: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// Destination of the reclaimed SOL
+    #[account(mut)]
+    pub destination: Signer<'info>,
+    /// The close-authority of `account`
+    pub authority: Signer<'info>,
+    pub token_program: Program<'info, Token2022>,
+}
+
+#[derive(Accounts)]
+pub struct FreezeTokenAccount<'info> {
+    /// The token account to freeze (must be initialized)
+    #[account(mut)]
+    pub account: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// The mint under which this account exists
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    /// Must match the mint’s freeze_authority
+    pub freeze_authority: Signer<'info>,
+    pub token_program: Program<'info, Token2022>,
+}
+
+#[derive(Accounts)]
+pub struct ThawTokenAccount<'info> {
+    /// The token account to thaw
+    #[account(mut)]
+    pub account: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// The same mint used when freezing
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    /// Must match the mint’s freeze_authority
+    pub freeze_authority: Signer<'info>,
+    pub token_program: Program<'info, Token2022>,
 }
