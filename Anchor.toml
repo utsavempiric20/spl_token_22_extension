@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-spl = "EyCuwEKWtrb1tZyN9Hc7CcufoQDKTMzRUEXeJWYRSADT"
+spl = "59JLGsNy5u2rzooVy4Syc2vBMVLo533AGKYAVcvtytLB"
 
 [registry]
 url = "https://api.apr.dev"
