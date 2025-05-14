@@ -4,13 +4,6 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token_2022::{
         mint_to,
-        spl_token_2022::extension::{
-            group_member_pointer::GroupMemberPointer,
-            metadata_pointer::MetadataPointer,
-            mint_close_authority::MintCloseAuthority,
-            permanent_delegate::PermanentDelegate,
-            transfer_hook::TransferHook,
-        },
         Burn,
         burn,
         close_account,
@@ -22,7 +15,6 @@ use anchor_spl::{
         MintTo,
     },
     token_interface::{
-        spl_token_metadata_interface::state::TokenMetadata,
         token_metadata_initialize,
         Mint,
         Token2022,
@@ -30,7 +22,6 @@ use anchor_spl::{
         TokenMetadataInitialize,
     },
 };
-use spl_pod::optional_keys::OptionalNonZeroPubkey;
 
 use crate::utils::*;
 
