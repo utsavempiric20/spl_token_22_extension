@@ -5,15 +5,13 @@
  * IDL can be found at `target/idl/spl.json`.
  */
 export type Spl = {
-  address: "59JLGsNy5u2rzooVy4Syc2vBMVLo533AGKYAVcvtytLB";
+  address: "4E4Cxz3VT5fjPVTC7e6y6JC3WvDZ3F2LuN9StRHhiMS8";
   metadata: {
     name: "spl";
     version: "0.1.0";
     spec: "0.1.0";
     description: "Created with Anchor";
   };
-  version: "0.1.0";
-  name: "spl";
   instructions: [
     {
       name: "burnTokens";
@@ -109,7 +107,18 @@ export type Spl = {
         {
           name: "mint";
           writable: true;
-          signer: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [109, 105, 110, 116];
+              },
+              {
+                kind: "account";
+                path: "authority";
+              }
+            ];
+          };
         },
         {
           name: "mintTokenAccount";

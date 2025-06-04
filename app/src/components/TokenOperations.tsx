@@ -1,25 +1,13 @@
 import { type FC, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import {
-  Program,
-  AnchorProvider,
-  web3,
-  utils,
-  type Idl,
-} from "@project-serum/anchor";
-import { PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddress,
-  TOKEN_2022_PROGRAM_ID,
-} from "@solana/spl-token";
-import idl from "../idl/spl.json";
-import * as anchor from "@coral-xyz/anchor";
+import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
+import type { Idl } from "@coral-xyz/anchor";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import idl from "../idl/spl.json";
 import type { Spl } from "../idl/spl";
-
-const programID = new PublicKey("HqhTizn571FCHJ2pd6sLSJqKc5dAUVAu96dz4g4mURAN");
 
 // Helper function to derive associated token address
 function associatedAddress({
@@ -31,7 +19,7 @@ function associatedAddress({
 }): PublicKey {
   return PublicKey.findProgramAddressSync(
     [owner.toBuffer(), TOKEN_2022_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-    ASSOCIATED_TOKEN_PROGRAM_ID
+    ASSOCIATED_PROGRAM_ID
   )[0];
 }
 
@@ -46,14 +34,17 @@ export const TokenOperations: FC = () => {
   const [mintAddress, setMintAddress] = useState("");
   const [targetAddress, setTargetAddress] = useState("");
   const [status, setStatus] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const getProvider = () => {
     if (!wallet.publicKey) throw new Error("Wallet not connected!");
     const opts = AnchorProvider.defaultOptions();
     const provider = new AnchorProvider(connection, wallet as any, opts);
-
     return provider;
+  };
+
+  const getProgram = (provider: AnchorProvider) => {
+    const program = new Program(idl as Idl, provider);
+    return program as unknown as Program<Spl>;
   };
 
   const showStatus = (message: string, isError = false) => {
@@ -61,73 +52,42 @@ export const TokenOperations: FC = () => {
     setTimeout(() => setStatus(""), 5000);
   };
 
-  const handleTransaction = async (callback: () => Promise<string>) => {
-    setIsLoading(true);
-    try {
-      const signature = await callback();
-      const confirmation = await connection.confirmTransaction(
-        signature,
-        "confirmed"
-      );
-      if (confirmation.value.err) {
-        throw new Error(
-          `Transaction failed: ${confirmation.value.err.toString()}`
-        );
-      }
-      return signature;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const createToken = async () => {
     try {
       if (!wallet.publicKey) throw new Error("Wallet not connected!");
       const provider = getProvider();
-      const program = new Program(idl as any, programID, provider);
+      const program = getProgram(provider);
 
-      // Parse decimals before using it
       const tokenDecimals = parseInt(decimals) || 9;
 
-      // Derive the mint PDA
       const [mintPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("mint"), provider.wallet.publicKey.toBuffer()],
         program.programId
       );
 
-      // Get the associated token account address
-      const ata = await getAssociatedTokenAddress(
-        mintPda,
-        provider.wallet.publicKey,
-        false,
-        TOKEN_2022_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
+      const [extraMetasPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("extra-account-metas"), mintPda.toBuffer()],
+        program.programId
       );
 
-      // Create the token with proper decimals
+      const ata = associatedAddress({
+        mint: mintPda,
+        owner: provider.wallet.publicKey,
+      });
+
       const tx = await program.methods
         .createMintAccount(tokenDecimals, tokenName, tokenSymbol, tokenUri)
-        .accounts({
+        .accountsStrict({
           payer: provider.wallet.publicKey,
           authority: provider.wallet.publicKey,
           receiver: provider.wallet.publicKey,
           mint: mintPda,
-          mint_token_account: ata,
-          extra_metas_account: {
-            pubkey: PublicKey.findProgramAddressSync(
-              [Buffer.from("extra-account-metas"), mintPda.toBuffer()],
-              program.programId
-            )[0],
-          },
-          system_program: SystemProgram.programId,
-          associated_token_program: ASSOCIATED_TOKEN_PROGRAM_ID,
-          token_program: TOKEN_2022_PROGRAM_ID,
+          mintTokenAccount: ata,
+          extraMetasAccount: extraMetasPda,
+          systemProgram: SystemProgram.programId,
+          associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
-        .preInstructions([
-          anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
-            units: 300000,
-          }),
-        ])
         .rpc();
 
       setMintAddress(mintPda.toString());
@@ -150,24 +110,25 @@ export const TokenOperations: FC = () => {
       if (!mintAddress) throw new Error("Please enter a mint address");
 
       const provider = getProvider();
-      const program = new Program(idl as any, programID, provider);
+      const program = getProgram(provider);
       const mintPubkey = new PublicKey(mintAddress);
 
-      const associatedTokenAddress = await utils.token.associatedAddress({
+      const ata = associatedAddress({
         mint: mintPubkey,
         owner: provider.wallet.publicKey,
       });
+
       const tx = await program.methods
-        .mintTokens(new anchor.BN(amount))
-        .accounts({
+        .mintTokens(new BN(amount))
+        .accountsStrict({
           mint: mintPubkey,
-          to: associatedTokenAddress,
+          to: ata,
           authority: provider.wallet.publicKey,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
 
-      showStatus(`Tokens minted successfully!`);
+      showStatus(`Tokens minted successfully!\nTx: ${tx}`);
     } catch (error: unknown) {
       console.error("Error minting tokens:", error);
       showStatus(
@@ -184,25 +145,25 @@ export const TokenOperations: FC = () => {
       if (!mintAddress) throw new Error("Please enter a mint address");
 
       const provider = getProvider();
-      const program = new Program(idl as any, programID, provider);
+      const program = getProgram(provider);
       const mintPubkey = new PublicKey(mintAddress);
 
-      const associatedTokenAddress = await utils.token.associatedAddress({
+      const ata = associatedAddress({
         mint: mintPubkey,
         owner: provider.wallet.publicKey,
       });
 
       const tx = await program.methods
-        .burnTokens(new anchor.BN(amount))
-        .accounts({
+        .burnTokens(new BN(amount))
+        .accountsStrict({
           mint: mintPubkey,
-          from: associatedTokenAddress,
+          from: ata,
           authority: provider.wallet.publicKey,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
 
-      showStatus(`Tokens burned successfully!`);
+      showStatus(`Tokens burned successfully!\nTx: ${tx}`);
     } catch (error: unknown) {
       console.error("Error burning tokens:", error);
       showStatus(
@@ -220,11 +181,11 @@ export const TokenOperations: FC = () => {
         throw new Error("Please enter both mint and target addresses");
 
       const provider = getProvider();
-      const program = new Program(idl as any, programID, provider);
+      const program = getProgram(provider);
 
       const tx = await program.methods
         .freezeTokenAccount()
-        .accounts({
+        .accountsStrict({
           account: new PublicKey(targetAddress),
           mint: new PublicKey(mintAddress),
           freezeAuthority: provider.wallet.publicKey,
@@ -232,7 +193,7 @@ export const TokenOperations: FC = () => {
         })
         .rpc();
 
-      showStatus(`Account frozen successfully!`);
+      showStatus(`Account frozen successfully!\nTx: ${tx}`);
     } catch (error: unknown) {
       console.error("Error freezing account:", error);
       showStatus(
@@ -250,11 +211,11 @@ export const TokenOperations: FC = () => {
         throw new Error("Please enter both mint and target addresses");
 
       const provider = getProvider();
-      const program = new Program(idl as any, programID, provider);
+      const program = getProgram(provider);
 
       const tx = await program.methods
         .thawTokenAccount()
-        .accounts({
+        .accountsStrict({
           account: new PublicKey(targetAddress),
           mint: new PublicKey(mintAddress),
           freezeAuthority: provider.wallet.publicKey,
@@ -262,7 +223,7 @@ export const TokenOperations: FC = () => {
         })
         .rpc();
 
-      showStatus(`Account thawed successfully!`);
+      showStatus(`Account thawed successfully!\nTx: ${tx}`);
     } catch (error: unknown) {
       console.error("Error thawing account:", error);
       showStatus(
@@ -279,11 +240,11 @@ export const TokenOperations: FC = () => {
       if (!targetAddress) throw new Error("Please enter a target address");
 
       const provider = getProvider();
-      const program = new Program(idl as any, programID, provider);
+      const program = getProgram(provider);
 
       const tx = await program.methods
         .closeTokenAccount()
-        .accounts({
+        .accountsStrict({
           account: new PublicKey(targetAddress),
           destination: provider.wallet.publicKey,
           authority: provider.wallet.publicKey,
@@ -291,7 +252,7 @@ export const TokenOperations: FC = () => {
         })
         .rpc();
 
-      showStatus(`Account closed successfully!`);
+      showStatus(`Account closed successfully!\nTx: ${tx}`);
     } catch (error: unknown) {
       console.error("Error closing account:", error);
       showStatus(
