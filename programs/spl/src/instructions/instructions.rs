@@ -44,7 +44,7 @@ pub fn handler(
     Ok(())
 }
 
-pub fn mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
+pub fn mint_spl_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(),
         to: ctx.accounts.to.to_account_info(),
@@ -56,7 +56,7 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
 }
 
 /// Burn `amount` tokens from `from`.
-pub fn burn_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
+pub fn burn_spl_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
     let cpi_accounts = Burn {
         mint: ctx.accounts.mint.to_account_info(),
         from: ctx.accounts.from.to_account_info(),
@@ -68,7 +68,7 @@ pub fn burn_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
 }
 
 /// Close `account`, sending its lamports to `destination`.
-pub fn close_token_account(ctx: Context<CloseTokenAccount>) -> Result<()> {
+pub fn close_spl_token_account(ctx: Context<CloseTokenAccount>) -> Result<()> {
     let cpi_accounts = CloseAccount {
         account: ctx.accounts.account.to_account_info(),
         destination: ctx.accounts.destination.to_account_info(),
@@ -80,7 +80,7 @@ pub fn close_token_account(ctx: Context<CloseTokenAccount>) -> Result<()> {
 }
 
 /// Freeze `account` (preventing transfers/burns) under `mint`.
-pub fn freeze_token_account(ctx: Context<FreezeTokenAccount>) -> Result<()> {
+pub fn freeze_spl_token_account(ctx: Context<FreezeTokenAccount>) -> Result<()> {
     let cpi_accounts = FreezeAccount {
         account: ctx.accounts.account.to_account_info(),
         mint: ctx.accounts.mint.to_account_info(),
@@ -92,7 +92,7 @@ pub fn freeze_token_account(ctx: Context<FreezeTokenAccount>) -> Result<()> {
 }
 
 /// Thaw (unfreeze) `account` under `mint`.
-pub fn thaw_token_account(ctx: Context<ThawTokenAccount>) -> Result<()> {
+pub fn thaw_spl_token_account(ctx: Context<ThawTokenAccount>) -> Result<()> {
     let cpi_accounts = ThawAccount {
         account: ctx.accounts.account.to_account_info(),
         mint: ctx.accounts.mint.to_account_info(),
@@ -131,7 +131,8 @@ pub struct CreateMintAccount<'info> {
     pub receiver: UncheckedAccount<'info>,
     #[account(
         init,
-        signer,
+        seeds = [b"mint", authority.key().as_ref()],
+        bump,
         payer = payer,
         mint::token_program = token_program,
         mint::decimals = decimals,

@@ -1,0 +1,320 @@
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/spl.json`.
+ */
+export type Spl = {
+  address: "59JLGsNy5u2rzooVy4Syc2vBMVLo533AGKYAVcvtytLB";
+  metadata: {
+    name: "spl";
+    version: "0.1.0";
+    spec: "0.1.0";
+    description: "Created with Anchor";
+  };
+  version: "0.1.0";
+  name: "spl";
+  instructions: [
+    {
+      name: "burnTokens";
+      discriminator: [76, 15, 51, 254, 229, 215, 121, 66];
+      accounts: [
+        {
+          name: "mint";
+          writable: true;
+        },
+        {
+          name: "from";
+          docs: [
+            "The token account to burn from (must have sufficient balance)"
+          ];
+          writable: true;
+        },
+        {
+          name: "authority";
+          docs: ["Must match the mint’s authority (or the account’s delegate)"];
+          signer: true;
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+        }
+      ];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
+        }
+      ];
+    },
+    {
+      name: "checkMintExtensionsConstraints";
+      discriminator: [116, 106, 124, 163, 185, 116, 224, 224];
+      accounts: [
+        {
+          name: "authority";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "mint";
+        }
+      ];
+      args: [];
+    },
+    {
+      name: "closeTokenAccount";
+      discriminator: [132, 172, 24, 60, 100, 156, 135, 97];
+      accounts: [
+        {
+          name: "account";
+          docs: ["The token account to close (must be empty)"];
+          writable: true;
+        },
+        {
+          name: "destination";
+          docs: ["Destination of the reclaimed SOL"];
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "authority";
+          docs: ["The close-authority of `account`"];
+          signer: true;
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+        }
+      ];
+      args: [];
+    },
+    {
+      name: "createMintAccount";
+      discriminator: [76, 184, 50, 62, 162, 141, 47, 103];
+      accounts: [
+        {
+          name: "payer";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "authority";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "receiver";
+        },
+        {
+          name: "mint";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "mintTokenAccount";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "receiver";
+              },
+              {
+                kind: "account";
+                path: "tokenProgram";
+              },
+              {
+                kind: "account";
+                path: "mint";
+              }
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ];
+            };
+          };
+        },
+        {
+          name: "extraMetasAccount";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ];
+              },
+              {
+                kind: "account";
+                path: "mint";
+              }
+            ];
+          };
+        },
+        {
+          name: "systemProgram";
+          address: "11111111111111111111111111111111";
+        },
+        {
+          name: "associatedTokenProgram";
+          address: "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+        }
+      ];
+      args: [
+        {
+          name: "decimals";
+          type: "u8";
+        },
+        {
+          name: "name";
+          type: "string";
+        },
+        {
+          name: "symbol";
+          type: "string";
+        },
+        {
+          name: "uri";
+          type: "string";
+        }
+      ];
+    },
+    {
+      name: "freezeTokenAccount";
+      discriminator: [138, 168, 178, 109, 205, 224, 209, 93];
+      accounts: [
+        {
+          name: "account";
+          docs: ["The token account to freeze (must be initialized)"];
+          writable: true;
+        },
+        {
+          name: "mint";
+          docs: ["The mint under which this account exists"];
+        },
+        {
+          name: "freezeAuthority";
+          docs: ["Must match the mint’s freeze_authority"];
+          signer: true;
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+        }
+      ];
+      args: [];
+    },
+    {
+      name: "mintTokens";
+      discriminator: [59, 132, 24, 246, 122, 39, 8, 243];
+      accounts: [
+        {
+          name: "mint";
+          writable: true;
+        },
+        {
+          name: "to";
+          docs: ["The token account to receive newly minted tokens"];
+          writable: true;
+        },
+        {
+          name: "authority";
+          docs: ["Must match the mint’s authority"];
+          signer: true;
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+        }
+      ];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
+        }
+      ];
+    },
+    {
+      name: "thawTokenAccount";
+      discriminator: [199, 172, 96, 93, 244, 252, 137, 171];
+      accounts: [
+        {
+          name: "account";
+          docs: ["The token account to thaw"];
+          writable: true;
+        },
+        {
+          name: "mint";
+          docs: ["The same mint used when freezing"];
+        },
+        {
+          name: "freezeAuthority";
+          docs: ["Must match the mint’s freeze_authority"];
+          signer: true;
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+        }
+      ];
+      args: [];
+    }
+  ];
+};

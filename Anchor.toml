@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-spl = "59JLGsNy5u2rzooVy4Syc2vBMVLo533AGKYAVcvtytLB"
+spl = "HqhTizn571FCHJ2pd6sLSJqKc5dAUVAu96dz4g4mURAN"
 
 [registry]
 url = "https://api.apr.dev"
@@ -19,3 +19,13 @@ members = ["programs/spl"]
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false
+
+[test.validator]
+bind_address = "0.0.0.0"
+ledger = ".anchor/test-ledger"
+rpc_port = 8899
