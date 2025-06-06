@@ -24,6 +24,7 @@ use anchor_spl::{
         TokenMetadataInitialize,
     },
 };
+use std::mem::size_of;
 
 use crate::state::*;
 use crate::utils::*;
@@ -410,6 +411,97 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64, decimals: u8) -> Resul
     Ok(())
 }
 
+pub fn claim_rewards(ctx: Context<ClaimRewards>, decimals: u8) -> Result<()> {
+    let pool_account_info = ctx.accounts.pool.to_account_info();
+
+    let (_pool_key, pool_bump) = Pubkey::find_program_address(
+        &[POOL_SEED, ctx.accounts.stake_mint.key.as_ref()],
+        ctx.program_id
+    );
+    let seeds: &[&[u8]] = &[POOL_SEED, ctx.accounts.stake_mint.key.as_ref(), &[pool_bump]];
+    let signer_seeds = &[&seeds[..]];
+
+    let pool = &mut ctx.accounts.pool;
+    let user = &mut ctx.accounts.user_stake;
+    let now = Clock::get()?.unix_timestamp;
+
+    // 1) Update global reward_per_token_stored
+    if pool.total_staked > 0 {
+        let elapsed = (now - pool.last_update_time) as u128;
+        let reward = elapsed.checked_mul(pool.reward_rate_per_second).unwrap();
+        let add_per_token = reward
+            .checked_mul(PRECISION)
+            .unwrap()
+            .checked_div(pool.total_staked)
+            .unwrap();
+        pool.reward_per_token_stored = pool.reward_per_token_stored
+            .checked_add(add_per_token)
+            .unwrap();
+    }
+    pool.last_update_time = now;
+
+    // 2) Update user pending rewards
+    let stored = pool.reward_per_token_stored;
+    let owed = user.amount_staked
+        .checked_mul(stored.checked_sub(user.reward_debt).unwrap())
+        .unwrap()
+        .checked_div(PRECISION)
+        .unwrap();
+    user.pending_rewards = user.pending_rewards.checked_add(owed).unwrap();
+
+    // 3) Transfer out pending rewards (if > 0)
+    if user.pending_rewards > 0 {
+        let reward_u64: u64 = user.pending_rewards.try_into().unwrap();
+
+        let cpi_accounts = TransferChecked {
+            from: ctx.accounts.reward_vault.to_account_info(),
+            to: ctx.accounts.user_reward_account.to_account_info(),
+            authority: pool_account_info.clone(),
+            mint: ctx.accounts.reward_mint.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            cpi_accounts,
+            signer_seeds
+        );
+        transfer_checked(cpi_ctx, reward_u64, decimals)?;
+        user.pending_rewards = 0;
+    }
+
+    // 4) Update user reward debt
+    user.reward_debt = user.amount_staked
+        .checked_mul(pool.reward_per_token_stored)
+        .unwrap()
+        .checked_div(PRECISION)
+        .unwrap();
+
+    Ok(())
+}
+
+pub fn set_reward_rate(ctx: Context<SetRewardRate>, new_rate: u64) -> Result<()> {
+    let pool = &mut ctx.accounts.pool;
+    let now = Clock::get()?.unix_timestamp;
+
+    // Before changing rate, accrue rewards up to now
+    if pool.total_staked > 0 {
+        let elapsed = (now - pool.last_update_time) as u128;
+        let reward = elapsed.checked_mul(pool.reward_rate_per_second).unwrap();
+        let add_per_token = reward
+            .checked_mul(PRECISION)
+            .unwrap()
+            .checked_div(pool.total_staked)
+            .unwrap();
+        pool.reward_per_token_stored = pool.reward_per_token_stored
+            .checked_add(add_per_token)
+            .unwrap();
+    }
+    pool.last_update_time = now;
+
+    // Set the new reward rate (scale by PRECISION)
+    pool.reward_rate_per_second = (new_rate as u128).checked_mul(PRECISION).unwrap();
+    Ok(())
+}
+
 /// STAKING POOL ACCOUNTS FUNCTIONS
 #[derive(Accounts)]
 #[instruction(reward_rate_per_second:u128)]
@@ -519,11 +611,10 @@ pub struct Unstake<'info> {
 
     /// The user’s pdas where we track their stake data
     #[account(
-        init_if_needed,
-        payer = staker,
+        mut,
         seeds = [USER_STAKE_SEED, pool.key().as_ref(), staker.key().as_ref()],
         bump,
-        space = 8 + size_of::<UserStake>()
+        has_one = staker
     )]
     pub user_stake: Account<'info, UserStake>,
 
@@ -540,6 +631,61 @@ pub struct Unstake<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct ClaimRewards<'info> {
+    #[account(mut)]
+    pub staker: Signer<'info>,
+
+    /// CHECK: just a key for PDA seed
+    pub stake_mint: UncheckedAccount<'info>,
+
+    /// CHECK: just a key for PDA seed
+    pub reward_mint: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+        seeds = [POOL_SEED,stake_mint.key().as_ref()],
+        bump
+    )]
+    pub pool: Account<'info, StakingPool>,
+
+    /// The user’s pdas where we track their stake data
+    #[account(
+        mut,
+        seeds = [USER_STAKE_SEED, pool.key().as_ref(), staker.key().as_ref()],
+        bump,
+        has_one = staker
+    )]
+    pub user_stake: Account<'info, UserStake>,
+
+    #[account(mut)]
+    pub reward_vault: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(mut, associated_token::mint = pool.reward_mint, associated_token::authority = staker)]
+    pub user_reward_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token2022>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
+}
+
+#[derive(Accounts)]
+pub struct SetRewardRate<'info> {
+    /// The admin of the pool
+    #[account(mut, constraint = pool.admin == admin.key())]
+    pub admin: Signer<'info>,
+
+    /// CHECK: just a key for PDA seed
+    pub stake_mint: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+        seeds = [POOL_SEED, stake_mint.key().as_ref()],
+        bump
+    )]
+    pub pool: Account<'info, StakingPool>,
 }
 
 #[error_code]
