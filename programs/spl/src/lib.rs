@@ -8,6 +8,8 @@ pub mod instructions;
 pub use instructions::*;
 pub mod utils;
 pub use utils::*;
+pub mod state;
+pub use state::*;
 
 #[program]
 pub mod spl {
@@ -18,13 +20,13 @@ pub mod spl {
         decimals: u8,
         name: String,
         symbol: String,
-        uri: String
+        uri: String,
     ) -> Result<()> {
         instructions::handler(ctx, decimals, name, symbol, uri)
     }
 
     pub fn check_mint_extensions_constraints(
-        _ctx: Context<CheckMintExtensionConstraints>
+        _ctx: Context<CheckMintExtensionConstraints>,
     ) -> Result<()> {
         Ok(())
     }

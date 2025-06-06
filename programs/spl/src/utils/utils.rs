@@ -1,21 +1,17 @@
 use anchor_lang::{
     prelude::Result,
     solana_program::{
-        account_info::AccountInfo,
-        program::invoke,
-        pubkey::Pubkey,
-        rent::Rent,
-        system_instruction::transfer,
-        sysvar::Sysvar,
+        account_info::AccountInfo, program::invoke, pubkey::Pubkey, rent::Rent,
+        system_instruction::transfer, sysvar::Sysvar,
     },
     Lamports,
 };
 use anchor_spl::token_interface::spl_token_2022::{
-    extension::{ BaseStateWithExtensions, Extension, StateWithExtensions },
+    extension::{BaseStateWithExtensions, Extension, StateWithExtensions},
     solana_zk_token_sdk::zk_token_proof_instruction::Pod,
     state::Mint,
 };
-use spl_tlv_account_resolution::{ account::ExtraAccountMeta, state::ExtraAccountMetaList };
+use spl_tlv_account_resolution::{account::ExtraAccountMeta, state::ExtraAccountMetaList};
 use spl_type_length_value::variable_len_pack::VariableLenPack;
 
 pub const APPROVE_ACCOUNT_SEED: &[u8] = b"approve-account";
@@ -24,20 +20,20 @@ pub const META_LIST_ACCOUNT_SEED: &[u8] = b"extra-account-metas";
 pub fn update_account_lamports_to_minimum_balance<'info>(
     account: AccountInfo<'info>,
     payer: AccountInfo<'info>,
-    system_program: AccountInfo<'info>
+    system_program: AccountInfo<'info>,
 ) -> Result<()> {
     let extra_lamports = Rent::get()?.minimum_balance(account.data_len()) - account.get_lamports();
     if extra_lamports > 0 {
         invoke(
             &transfer(payer.key, account.key, extra_lamports),
-            &[payer, account, system_program]
+            &[payer, account, system_program],
         )?;
     }
     Ok(())
 }
 
 pub fn get_mint_extensible_extension_data<T: Extension + VariableLenPack>(
-    account: &mut AccountInfo
+    account: &mut AccountInfo,
 ) -> Result<T> {
     let mint_data = account.data.borrow();
     let mint_with_extension = StateWithExtensions::<Mint>::unpack(&mint_data)?;
