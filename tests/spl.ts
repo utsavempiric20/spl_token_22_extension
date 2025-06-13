@@ -90,7 +90,7 @@ describe("spl_program", () => {
   });
 
   it("mint_tokens: mints fresh supply into the ATA", async () => {
-    const mintAmount = new BN(1_000_000 * 10 ** decimals);
+    const mintAmount = new BN(1_000 * 10 ** decimals);
 
     await program.methods
       .mintTokens(mintAmount)
@@ -109,7 +109,7 @@ describe("spl_program", () => {
       undefined,
       TOKEN_2022_PROGRAM_ID
     );
-    expect(acct.amount).to.eql(BigInt(1_000_000 * 10 ** decimals));
+    expect(acct.amount).to.eql(BigInt(1_000 * 10 ** decimals));
   });
 
   it("burn_tokens: burns a portion of the supply", async () => {
@@ -133,7 +133,7 @@ describe("spl_program", () => {
       TOKEN_2022_PROGRAM_ID
     );
 
-    expect(acct.amount).to.eql(BigInt((1_000_000 - 200) * 10 ** decimals));
+    expect(acct.amount).to.eql(BigInt((1_000 - 200) * 10 ** decimals));
   });
 
   it("freeze and thaw the token account", async () => {
@@ -182,7 +182,7 @@ describe("spl_program", () => {
   //     .accountsStrict({
   //       account: ata,
   //       destination: payer.publicKey,
-  //       authority: payer.publicKey,
+  //       authority: payer.publicKey,1700000000030
   //       tokenProgram: TOKEN_2022_PROGRAM_ID,
   //     })
   //     .signers([payer])
