@@ -26,7 +26,7 @@ pub struct StakingPool {
 
     /// Reward rate per second, scaled by 1e12 (to allow fractional).
     /// E.g. if you want to pay out 1 token per second, store 1_000_000_000_000.
-    pub reward_rate_per_second: u128,
+    pub reward_rate_per_day: u128,
 
     /// Accumulated reward per staked token, scaled by 1e12.
     /// Updated on each stake/unstake/claim.
@@ -34,6 +34,7 @@ pub struct StakingPool {
 
     /// Last timestamp (in Unix seconds) when we updated `reward_per_token_stored`.
     pub last_update_time: i64,
+    pub paused: bool,
 }
 
 /// Each user’s individual stake account
