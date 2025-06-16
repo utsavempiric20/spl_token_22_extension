@@ -4,14 +4,14 @@
 resolution = true
 skip-lint = false
 
-[programs.localnet]
+[programs.devnet]
 spl = "C1QrbSXfsm94jPzoucAa8ZX3EdxTUeDvJP9mV8NtZxx"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [workspace]
@@ -26,7 +26,7 @@ shutdown_wait = 2000
 upgradeable = false
 
 [test.validator]
-start       = false
-ledger      = ".anchor/test-ledger"
-bind_address= "0.0.0.0"
-url         = "http://127.0.0.1:8899"
+start = false
+ledger = ".anchor/test-ledger"
+bind_address = "0.0.0.0"
+url = "http://127.0.0.1:8899"

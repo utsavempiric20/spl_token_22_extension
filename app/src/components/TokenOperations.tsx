@@ -1,5 +1,9 @@
 import { type FC, useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import {
+  useConnection,
+  useWallet,
+  type AnchorWallet,
+} from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import type { Idl } from "@coral-xyz/anchor";
@@ -37,8 +41,9 @@ export const TokenOperations: FC = () => {
 
   const getProvider = () => {
     if (!wallet.publicKey) throw new Error("Wallet not connected!");
+    const anchorWallet = wallet as unknown as AnchorWallet;
     const opts = AnchorProvider.defaultOptions();
-    const provider = new AnchorProvider(connection, wallet as any, opts);
+    const provider = new AnchorProvider(connection, anchorWallet, opts);
     return provider;
   };
 
@@ -97,7 +102,7 @@ export const TokenOperations: FC = () => {
     } catch (error: unknown) {
       console.error("Program execution error:", error);
       if (error instanceof Error && "logs" in error) {
-        console.error("Transaction logs:", (error as any).logs);
+        console.error("Transaction logs:", error.logs);
       }
       const errMsg =
         error instanceof Error ? error.message : JSON.stringify(error);

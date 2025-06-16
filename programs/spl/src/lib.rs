@@ -20,13 +20,13 @@ pub mod spl {
         decimals: u8,
         name: String,
         symbol: String,
-        uri: String,
+        uri: String
     ) -> Result<()> {
         instructions::handler(ctx, decimals, name, symbol, uri)
     }
 
     pub fn check_mint_extensions_constraints(
-        _ctx: Context<CheckMintExtensionConstraints>,
+        _ctx: Context<CheckMintExtensionConstraints>
     ) -> Result<()> {
         Ok(())
     }
@@ -53,7 +53,7 @@ pub mod spl {
 
     pub fn initialize_pool_stake(
         ctx: Context<InitializePool>,
-        reward_rate_per_second: u128,
+        reward_rate_per_second: u128
     ) -> Result<()> {
         instructions::initialize_pool(ctx, reward_rate_per_second)
     }
@@ -84,5 +84,9 @@ pub mod spl {
 
     pub fn unpause_pool_admin(ctx: Context<PausePool>) -> Result<()> {
         instructions::unpause_pool(ctx)
+    }
+
+    pub fn emergency_withdraw_stake(ctx: Context<EmergencyWithdraw>) -> Result<()> {
+        instructions::emergency_withdraw(ctx)
     }
 }

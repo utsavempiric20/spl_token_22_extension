@@ -55,4 +55,6 @@ pub struct UserStake {
 
     /// Accumulated but unclaimed rewards.
     pub pending_rewards: u128,
+
+    pub last_stake_time: i64,
 }
