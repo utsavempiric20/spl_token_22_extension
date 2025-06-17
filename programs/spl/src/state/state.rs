@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 pub const POOL_SEED: &[u8] = b"staking_pool";
 pub const USER_STAKE_SEED: &[u8] = b"user_stake";
 
-/// The global state of a single staking pool.
+/// staking
 #[account]
 pub struct StakingPool {
     /// The mint of the token users stake.
