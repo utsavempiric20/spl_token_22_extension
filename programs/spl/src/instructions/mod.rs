@@ -1,4 +1,6 @@
-pub mod token;
+pub mod amm;
 pub mod staking;
-pub use token::*;
+pub mod token;
+pub use amm::*;
 pub use staking::*;
+pub use token::*;

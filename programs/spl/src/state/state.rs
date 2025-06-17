@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 pub const POOL_SEED: &[u8] = b"staking_pool";
 pub const USER_STAKE_SEED: &[u8] = b"user_stake";
-
+pub const LIQUIDITY_POOL_SEED: &[u8] = b"liquidity_pool";
 /// staking
 #[account]
 pub struct StakingPool {
@@ -57,4 +57,18 @@ pub struct UserStake {
     pub pending_rewards: u128,
 
     pub last_stake_time: i64,
+}
+
+/// AMM
+#[account]
+pub struct LiquidityPoolAMM {
+    pub pool_name: String,
+    pub token_a_mint: Pubkey,
+    pub token_b_mint: Pubkey,
+    pub vault_a: Pubkey,
+    pub vault_b: Pubkey,
+    pub amount0: u128,
+    pub amount1: u128,
+    pub total_liquidity: u128,
+    pub pool_fee: f32,
 }

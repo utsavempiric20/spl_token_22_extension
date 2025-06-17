@@ -3,23 +3,11 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_2022::{
-        burn,
-        close_account,
-        freeze_account,
-        mint_to,
-        thaw_account,
-        Burn,
-        CloseAccount,
-        FreezeAccount,
-        MintTo,
-        ThawAccount,
+        burn, close_account, freeze_account, mint_to, thaw_account, Burn, CloseAccount,
+        FreezeAccount, MintTo, ThawAccount,
     },
     token_interface::{
-        token_metadata_initialize,
-        Mint,
-        Token2022,
-        TokenAccount,
-        TokenMetadataInitialize,
+        token_metadata_initialize, Mint, Token2022, TokenAccount, TokenMetadataInitialize,
     },
 };
 
@@ -31,7 +19,7 @@ pub fn handler(
     _decimals: u8,
     name: String,
     symbol: String,
-    uri: String
+    uri: String,
 ) -> Result<()> {
     ctx.accounts.initialize_token_metadata(name, symbol, uri)?;
     ctx.accounts.mint.reload()?;
@@ -39,7 +27,7 @@ pub fn handler(
     update_account_lamports_to_minimum_balance(
         ctx.accounts.mint.to_account_info(),
         ctx.accounts.payer.to_account_info(),
-        ctx.accounts.system_program.to_account_info()
+        ctx.accounts.system_program.to_account_info(),
     )?;
 
     Ok(())
