@@ -67,8 +67,11 @@ pub struct LiquidityPoolAMM {
     pub token_b_mint: Pubkey,
     pub vault_a: Pubkey,
     pub vault_b: Pubkey,
-    pub amount0: u128,
-    pub amount1: u128,
-    pub total_liquidity: u128,
-    pub pool_fee: f32,
+
+    pub reserve_a: u128,
+    pub reserve_b: u128,
+
+    pub total_lp_supply: u128,
+    pub fee_bps: u16,
+    pub bump: u8,
 }
