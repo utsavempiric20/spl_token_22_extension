@@ -20,13 +20,13 @@ pub mod spl {
         decimals: u8,
         name: String,
         symbol: String,
-        uri: String,
+        uri: String
     ) -> Result<()> {
         instructions::handler(ctx, decimals, name, symbol, uri)
     }
 
     pub fn check_mint_extensions_constraints(
-        _ctx: Context<CheckMintExtensionConstraints>,
+        _ctx: Context<CheckMintExtensionConstraints>
     ) -> Result<()> {
         Ok(())
     }
@@ -53,7 +53,7 @@ pub mod spl {
 
     pub fn initialize_pool_stake(
         ctx: Context<InitializePool>,
-        reward_rate_per_second: u128,
+        reward_rate_per_second: u128
     ) -> Result<()> {
         instructions::initialize_pool(ctx, reward_rate_per_second)
     }
@@ -88,5 +88,33 @@ pub mod spl {
 
     pub fn emergency_withdraw_stake(ctx: Context<EmergencyWithdraw>) -> Result<()> {
         instructions::emergency_withdraw(ctx)
+    }
+
+    pub fn initialize_liquidity_pool_amm(
+        ctx: Context<LiquidityPool>,
+        pool_name: String,
+        pool_fee_bps: u16
+    ) -> Result<()> {
+        instructions::initialize_liquidity_pool(ctx, pool_name, pool_fee_bps)
+    }
+
+    pub fn add_liquidity_amm(
+        ctx: Context<AddLiquidity>,
+        amount_a_desired: u64,
+        max_amount_b: u64
+    ) -> Result<()> {
+        instructions::add_liquidity(ctx, amount_a_desired, max_amount_b)
+    }
+
+    pub fn remove_liquidity_amm(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result<()> {
+        instructions::remove_liquidity(ctx, lp_amount)
+    }
+
+    pub fn quote_amm(ctx: Context<Quote>, amount_in: u128) -> Result<u128> {
+        instructions::quote(ctx, amount_in)
+    }
+
+    pub fn swap_amm(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
+        instructions::swap(ctx, amount_in, min_out)
     }
 }

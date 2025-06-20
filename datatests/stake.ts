@@ -11,7 +11,7 @@ import chai, { expect } from "chai";
 import chaiBn from "chai-bn";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
-import { Spl } from "../app/src/idl/spl";
+import { Spl } from "../app/idl/spl";
 
 chai.use(chaiBn(BN));
 

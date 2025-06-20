@@ -234,7 +234,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let tp = ctx.accounts.token_program.to_account_info();
 
-    // 1) Decide direction *and* copy reserves into locals
+    // copy reserves into locals
     let (
         vault_in,
         vault_out,
@@ -276,7 +276,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
 
     require!(reserve_in > 0 && reserve_out > 0, AmmError::EmptyPool);
 
-    // 2) Compute swap math
+    // Compute swap
     let fee_bps = pool.fee_bps as u128;
     let amount_in_u128 = amount_in as u128;
     let after_fee = checked_mul(amount_in_u128, FEE_DENOM - fee_bps)? / FEE_DENOM;
@@ -286,7 +286,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
     let amount_out = (reserve_out - new_out) as u64;
     require!(amount_out >= min_out, AmmError::SlippageExceeded);
 
-    // 3) Perform token transfers (user→vault_in, vault_out→user)
+    // Perform token transfers (user→vault_in, vault_out→user)
     anchor_spl::token_2022::transfer_checked(
         CpiContext::new(tp.clone(), TransferChecked {
             from: user_in.to_account_info(),
@@ -319,7 +319,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
         dec_out
     )?;
 
-    // 4) **Now** write the new reserves back into pool
+    // Now write the new reserves back into pool
     if vault_in.key() == pool.vault_a {
         pool.reserve_a = new_in;
         pool.reserve_b = new_out;
@@ -350,7 +350,7 @@ fn isqrt(n: u128) -> u64 {
 }
 
 #[derive(Accounts)]
-#[instruction(pool_name:String,pool_fee:f32)]
+#[instruction(pool_name:String,pool_fee:u16)]
 pub struct LiquidityPool<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
@@ -383,6 +383,17 @@ pub struct LiquidityPool<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token2022>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    #[account(
+        init,
+        seeds = [b"lp_mint", pool.key().as_ref()],
+        bump,
+        payer = admin,
+        mint::decimals = 9,
+        mint::authority = pool,
+        mint::freeze_authority = pool,
+        mint::token_program = token_program
+    )]
+    pub lp_mint: InterfaceAccount<'info, Mint>,
     pub rent: Sysvar<'info, Rent>,
 }
 
@@ -398,14 +409,30 @@ pub struct AddLiquidity<'info> {
     pub vault_b: InterfaceAccount<'info, TokenAccount>,
     #[account(mut,has_one = vault_a, has_one = vault_b)]
     pub pool: Account<'info, LiquidityPoolAMM>,
-    #[account(mut, associated_token::mint = pool.token_a_mint, associated_token::authority = depositor)]
+    #[account(
+        init_if_needed,
+        associated_token::mint = token_a_mint,
+        associated_token::authority = depositor,
+        payer = depositor
+    )]
     pub user_token_a_account: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut, associated_token::mint = pool.token_b_mint, associated_token::authority = depositor)]
+    #[account(
+        init_if_needed,
+        associated_token::mint = token_b_mint,
+        associated_token::authority = depositor,
+        payer = depositor
+    )]
     pub user_token_b_account: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub lp_mint: InterfaceAccount<'info, Mint>,
-    #[account(mut,associated_token::mint = lp_mint, associated_token::authority = depositor)]
+    #[account(
+        init_if_needed,
+        associated_token::mint = lp_mint,
+        associated_token::authority = depositor,
+        payer = depositor
+    )]
     pub user_lp_mint_account: InterfaceAccount<'info, TokenAccount>,
+    pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token2022>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }

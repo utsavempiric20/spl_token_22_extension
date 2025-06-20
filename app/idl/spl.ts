@@ -14,6 +14,344 @@ export type Spl = {
   },
   "instructions": [
     {
+      "name": "addLiquidityAmm",
+      "discriminator": [
+        215,
+        242,
+        168,
+        230,
+        90,
+        23,
+        220,
+        129
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "tokenAMint"
+        },
+        {
+          "name": "tokenBMint"
+        },
+        {
+          "name": "vaultA",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "vaultB",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "userTokenAAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.token_a_mint",
+                "account": "liquidityPoolAmm"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "userTokenBAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.token_b_mint",
+                "account": "liquidityPoolAmm"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "lpMint",
+          "writable": true
+        },
+        {
+          "name": "userLpMintAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "lpMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "amountADesired",
+          "type": "u64"
+        },
+        {
+          "name": "maxAmountB",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "burnTokens",
       "discriminator": [
         76,
@@ -585,6 +923,231 @@ export type Spl = {
       "args": []
     },
     {
+      "name": "initializeLiquidityPoolAmm",
+      "discriminator": [
+        98,
+        116,
+        99,
+        14,
+        47,
+        245,
+        129,
+        17
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "tokenAMint"
+        },
+        {
+          "name": "tokenBMint"
+        },
+        {
+          "name": "vaultTokenA",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenAMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultTokenB",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenBMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  113,
+                  117,
+                  105,
+                  100,
+                  105,
+                  116,
+                  121,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "tokenAMint"
+              },
+              {
+                "kind": "account",
+                "path": "tokenBMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "lpMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "poolName",
+          "type": "string"
+        },
+        {
+          "name": "poolFeeBps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
       "name": "initializePoolStake",
       "discriminator": [
         32,
@@ -851,6 +1414,365 @@ export type Spl = {
       "args": []
     },
     {
+      "name": "quoteAmm",
+      "discriminator": [
+        3,
+        187,
+        210,
+        7,
+        80,
+        12,
+        58,
+        101
+      ],
+      "accounts": [
+        {
+          "name": "pool"
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u128"
+        }
+      ],
+      "returns": "u128"
+    },
+    {
+      "name": "removeLiquidityAmm",
+      "discriminator": [
+        47,
+        218,
+        52,
+        11,
+        5,
+        49,
+        168,
+        253
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vaultA",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "vaultB",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "tokenAMint"
+        },
+        {
+          "name": "tokenBMint"
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "userTokenAAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.token_a_mint",
+                "account": "liquidityPoolAmm"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "userTokenBAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.token_b_mint",
+                "account": "liquidityPoolAmm"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "lpMint",
+          "writable": true
+        },
+        {
+          "name": "userLpMintAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "lpMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "lpAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "setRewardRateStake",
       "discriminator": [
         35,
@@ -1035,6 +1957,68 @@ export type Spl = {
       "args": [
         {
           "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "swapAmm",
+      "discriminator": [
+        107,
+        111,
+        184,
+        68,
+        25,
+        94,
+        158,
+        222
+      ],
+      "accounts": [
+        {
+          "name": "swapper",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "vaultIn",
+          "writable": true
+        },
+        {
+          "name": "vaultOut",
+          "writable": true
+        },
+        {
+          "name": "userIn",
+          "writable": true
+        },
+        {
+          "name": "userOut",
+          "writable": true
+        },
+        {
+          "name": "tokenAMint",
+          "writable": true
+        },
+        {
+          "name": "tokenBMint",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "minOut",
           "type": "u64"
         }
       ]
@@ -1243,6 +2227,19 @@ export type Spl = {
   ],
   "accounts": [
     {
+      "name": "liquidityPoolAmm",
+      "discriminator": [
+        98,
+        91,
+        145,
+        63,
+        149,
+        64,
+        46,
+        254
+      ]
+    },
+    {
       "name": "stakingPool",
       "discriminator": [
         203,
@@ -1281,6 +2278,45 @@ export type Spl = {
         18,
         188,
         237
+      ]
+    },
+    {
+      "name": "liquidityAdded",
+      "discriminator": [
+        154,
+        26,
+        221,
+        108,
+        238,
+        64,
+        217,
+        161
+      ]
+    },
+    {
+      "name": "liquidityRemoved",
+      "discriminator": [
+        225,
+        105,
+        216,
+        39,
+        124,
+        116,
+        169,
+        189
+      ]
+    },
+    {
+      "name": "poolCreated",
+      "discriminator": [
+        202,
+        44,
+        41,
+        88,
+        104,
+        220,
+        157,
+        82
       ]
     },
     {
@@ -1333,6 +2369,19 @@ export type Spl = {
         33,
         75,
         175
+      ]
+    },
+    {
+      "name": "swapExecuted",
+      "discriminator": [
+        150,
+        166,
+        26,
+        225,
+        28,
+        89,
+        38,
+        79
       ]
     },
     {
@@ -1392,6 +2441,167 @@ export type Spl = {
           {
             "name": "time",
             "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "liquidityAdded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "depositor",
+            "type": "pubkey"
+          },
+          {
+            "name": "amountA",
+            "type": "u64"
+          },
+          {
+            "name": "amountB",
+            "type": "u64"
+          },
+          {
+            "name": "lpMinted",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "liquidityPoolAmm",
+      "docs": [
+        "AMM"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "poolName",
+            "docs": [
+              "Name of the pool like SOL/USDC"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "tokenAMint",
+            "docs": [
+              "Name of the token0 token like SOL"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenBMint",
+            "docs": [
+              "Name of the token1 token like USDC"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "vaultA",
+            "docs": [
+              "it store the token0 tokens e.g SOL"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "vaultB",
+            "docs": [
+              "it store the token1 tokens e.g USDC"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "reserveA",
+            "docs": [
+              "it reserve the total tokens of token0 for swaps"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "reserveB",
+            "docs": [
+              "it reserve the total tokens of token1 for swaps"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "totalLpSupply",
+            "docs": [
+              "it's total supply of the mint tokens which provide to the LPs"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "feeBps",
+            "docs": [
+              "Fees for the swaps"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Initali Pool bump which represents between 0-255"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "liquidityRemoved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amountA",
+            "type": "u64"
+          },
+          {
+            "name": "amountB",
+            "type": "u64"
+          },
+          {
+            "name": "lpBurned",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "poolCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "mintA",
+            "type": "pubkey"
+          },
+          {
+            "name": "mintB",
+            "type": "pubkey"
+          },
+          {
+            "name": "feeBps",
+            "type": "u16"
           }
         ]
       }
@@ -1471,7 +2681,7 @@ export type Spl = {
     {
       "name": "stakingPool",
       "docs": [
-        "The global state of a single staking pool."
+        "staking"
       ],
       "type": {
         "kind": "struct",
@@ -1544,6 +2754,30 @@ export type Spl = {
           {
             "name": "paused",
             "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "swapExecuted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "trader",
+            "type": "pubkey"
+          },
+          {
+            "name": "amountIn",
+            "type": "u64"
+          },
+          {
+            "name": "amountOut",
+            "type": "u64"
           }
         ]
       }
