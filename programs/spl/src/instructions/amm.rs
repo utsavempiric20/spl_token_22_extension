@@ -36,6 +36,7 @@ pub fn initialize_liquidity_pool(
 }
 
 pub const FEE_DENOM: u128 = 10_000;
+
 pub fn add_liquidity(
     ctx: Context<AddLiquidity>,
     amount_a_desired: u64,
@@ -48,9 +49,8 @@ pub fn add_liquidity(
     let reserve_a: u128 = vault_a.amount.into();
     let reserve_b: u128 = vault_b.amount.into();
 
-    // quote optimal B
     let amount_b_optimal: u64 = if reserve_a == 0 && reserve_b == 0 {
-        max_amount_b // first deposit, user decides ratio
+        max_amount_b
     } else {
         let q = checked_mul(amount_a_desired as u128, reserve_b)?
             .checked_div(reserve_a)
@@ -203,6 +203,31 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
         lp_burned: lp_amount,
     });
     Ok(())
+}
+
+pub fn calculate_quote_amount(
+    reserve_in: u128,
+    reserve_out: u128,
+    amount_in: u128,
+    pool_fee_bps: u16
+) -> Result<u128> {
+    let after_fee = checked_mul(amount_in, FEE_DENOM - (pool_fee_bps as u128))? / FEE_DENOM;
+    let new_in: u128 = after_fee.checked_add(reserve_in).unwrap();
+    let total_reserve = checked_mul(reserve_in, reserve_out).unwrap();
+    let new_reserve_out = total_reserve.checked_div(new_in).ok_or(AmmError::MathOverflow)?;
+    let amount_out: u128 = reserve_out.checked_sub(new_reserve_out).ok_or(AmmError::MathOverflow)?;
+    Ok(amount_out)
+}
+
+pub fn quote(ctx: Context<Quote>, amount_in: u128) -> Result<u128> {
+    let pool = &ctx.accounts.pool;
+    let swap_out_amount = calculate_quote_amount(
+        pool.reserve_a,
+        pool.reserve_b,
+        amount_in,
+        pool.fee_bps
+    )?;
+    Ok(swap_out_amount)
 }
 
 pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
@@ -427,6 +452,11 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub token_b_mint: InterfaceAccount<'info, Mint>,
     pub token_program: Program<'info, Token2022>,
+}
+
+#[derive(Accounts)]
+pub struct Quote<'info> {
+    pub pool: Account<'info, LiquidityPoolAMM>,
 }
 
 #[event]

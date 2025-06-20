@@ -62,16 +62,33 @@ pub struct UserStake {
 /// AMM
 #[account]
 pub struct LiquidityPoolAMM {
+    /// Name of the pool like SOL/USDC
     pub pool_name: String,
+
+    /// Name of the token0 token like SOL
     pub token_a_mint: Pubkey,
+
+    /// Name of the token1 token like USDC
     pub token_b_mint: Pubkey,
+
+    /// it store the token0 tokens e.g SOL
     pub vault_a: Pubkey,
+
+    /// it store the token1 tokens e.g USDC
     pub vault_b: Pubkey,
 
+    /// it reserve the total tokens of token0 for swaps
     pub reserve_a: u128,
+
+    /// it reserve the total tokens of token1 for swaps
     pub reserve_b: u128,
 
+    /// it's total supply of the mint tokens which provide to the LPs
     pub total_lp_supply: u128,
+
+    /// Fees for the swaps
     pub fee_bps: u16,
+
+    /// Initali Pool bump which represents between 0-255
     pub bump: u8,
 }

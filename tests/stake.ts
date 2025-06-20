@@ -134,9 +134,6 @@ describe("staking_program", () => {
   it("2. stake, wait 3 s, claim reward, unstake", async () => {
     const stakeAmt = new BN(100).mul(PRECISION);
 
-    const beforeStake = await bal(userAta);
-    console.log("beforeStake : ", beforeStake.toNumber());
-
     await program.methods
       .stake(stakeAmt)
       .accountsStrict({
@@ -157,7 +154,6 @@ describe("staking_program", () => {
     await sleep(10_000);
 
     const before = await bal(userAta);
-    console.log("before : ", before.toNumber());
 
     await program.methods
       .claimRewardsStake()
@@ -177,13 +173,11 @@ describe("staking_program", () => {
 
     const after = await bal(userAta);
     const earned = after.sub(before);
-    console.log("claimed:", earned.toString());
 
     expect(earned.gt(new BN(0))).to.be.true;
     expect(earned.lt(new BN(100).mul(PRECISION))).to.be.true;
 
     const beforeUnstake = await bal(userAta);
-    console.log("beforeUnstake :", beforeUnstake.toNumber());
 
     await program.methods
       .unstake(stakeAmt)
@@ -204,11 +198,8 @@ describe("staking_program", () => {
       })
       .signers([payer])
       .rpc();
-    const afterUnstake = await bal(userAta);
-    console.log("afterUnstake :", afterUnstake.toNumber());
 
     const deltaPrincipal = (await bal(userAta)).sub(beforeUnstake);
-    console.log("deltaPrincipal : ", deltaPrincipal.toNumber());
 
     expect(deltaPrincipal.gte(stakeAmt)).to.be.true;
 
@@ -255,8 +246,7 @@ describe("staking_program", () => {
 
   it("4. emergency withdraw returns 90 % of principal", async () => {
     const stakeAmt = new BN(100).mul(PRECISION);
-    const before = await bal(userAta);
-    console.log("before : ", before.toNumber());
+
     await program.methods
       .stake(stakeAmt)
       .accountsStrict({
@@ -275,7 +265,7 @@ describe("staking_program", () => {
       .rpc();
 
     const beforeEmergency = await bal(userAta);
-    console.log("beforeE : ", beforeEmergency.toNumber());
+
     await program.methods
       .emergencyWithdrawStake()
       .accountsStrict({
@@ -291,7 +281,6 @@ describe("staking_program", () => {
       .rpc();
 
     const after = await bal(userAta);
-    console.log("after :", after.toNumber());
 
     const delta = after.sub(beforeEmergency);
 
@@ -301,7 +290,6 @@ describe("staking_program", () => {
     expect(delta.lte(stakeAmt)).to.be.true;
 
     const userStakeAcc = await program.account.userStake.fetch(userStakePda);
-    console.log("userStakeAcc : ", userStakeAcc.amountStaked.toNumber());
 
     expect(new BN(userStakeAcc.amountStaked).isZero()).to.be.true;
   });
