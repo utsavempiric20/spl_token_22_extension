@@ -2,8 +2,8 @@ use anchor_lang::prelude::*;
 
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_2022::{ mint_to, transfer_checked, MintTo, TransferChecked },
-    token_interface::{ Mint, Token2022, TokenAccount },
+    token_2022::{mint_to, transfer_checked, MintTo, TransferChecked},
+    token_interface::{Mint, Token2022, TokenAccount},
 };
 use std::mem::size_of;
 
@@ -51,7 +51,8 @@ pub fn stake_tokens(ctx: Context<Stake>, amount: u64) -> Result<()> {
             .checked_mul(pool.reward_rate_per_day)
             .ok_or(StakingError::RewardOverflow)?;
         let add_per_token = reward.checked_div(pool.total_staked).unwrap();
-        pool.reward_per_token_stored = pool.reward_per_token_stored
+        pool.reward_per_token_stored = pool
+            .reward_per_token_stored
             .checked_add(add_per_token)
             .unwrap();
     }
@@ -77,7 +78,8 @@ pub fn stake_tokens(ctx: Context<Stake>, amount: u64) -> Result<()> {
     // 4) Update balances
     pool.total_staked = pool.total_staked.checked_add(amount as u128).unwrap();
     user.amount_staked = user.amount_staked.checked_add(amount as u128).unwrap();
-    user.reward_debt = user.amount_staked
+    user.reward_debt = user
+        .amount_staked
         .checked_mul(pool.reward_per_token_stored)
         .unwrap()
         .checked_div(PRECISION)
@@ -95,16 +97,17 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.pool.paused, StakingError::PoolPaused);
     let user = &mut ctx.accounts.user_stake;
     let now = Clock::get()?.unix_timestamp;
-    require!(now - user.last_stake_time >= LOCKUP_PERIOD, StakingError::LockupNotExpired);
+    require!(
+        now - user.last_stake_time >= LOCKUP_PERIOD,
+        StakingError::LockupNotExpired
+    );
 
     let pool_account_info = ctx.accounts.pool.to_account_info();
     let stake_mint_key = ctx.accounts.stake_mint.key();
 
     // We also need the PDA bump now, before taking a &mut:
-    let (_pool_key, pool_bump) = Pubkey::find_program_address(
-        &[POOL_SEED, stake_mint_key.as_ref()],
-        ctx.program_id
-    );
+    let (_pool_key, pool_bump) =
+        Pubkey::find_program_address(&[POOL_SEED, stake_mint_key.as_ref()], ctx.program_id);
     let seeds: &[&[u8]] = &[POOL_SEED, stake_mint_key.as_ref(), &[pool_bump]];
     let signer_seeds = &[&seeds[..]];
 
@@ -112,7 +115,10 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
 
     let now = Clock::get()?.unix_timestamp;
 
-    require!(user.amount_staked >= (amount as u128), StakingError::InsufficientStaked);
+    require!(
+        user.amount_staked >= (amount as u128),
+        StakingError::InsufficientStaked
+    );
 
     // 1) Update global reward_per_token_stored
     if pool.total_staked > 0 {
@@ -121,7 +127,8 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
             .checked_mul(pool.reward_rate_per_day)
             .ok_or(StakingError::RewardOverflow)?;
         let add_per_token = reward.checked_div(pool.total_staked).unwrap();
-        pool.reward_per_token_stored = pool.reward_per_token_stored
+        pool.reward_per_token_stored = pool
+            .reward_per_token_stored
             .checked_add(add_per_token)
             .unwrap();
     }
@@ -146,7 +153,7 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     let cpi_ctx = CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info(),
         cpi_accounts,
-        signer_seeds
+        signer_seeds,
     );
     transfer_checked(cpi_ctx, amount, ctx.accounts.stake_mint.decimals)?;
 
@@ -166,14 +173,15 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
         let cpi_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
             cpi_accounts,
-            signer_seeds
+            signer_seeds,
         );
         transfer_checked(cpi_ctx, reward_amount, ctx.accounts.reward_mint.decimals)?;
         user.pending_rewards = 0;
     }
 
     // 6) Update reward debt for any remaining stake
-    user.reward_debt = user.amount_staked
+    user.reward_debt = user
+        .amount_staked
         .checked_mul(pool.reward_per_token_stored)
         .unwrap()
         .checked_div(PRECISION)
@@ -193,10 +201,8 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
     let pool_account_info: AccountInfo<'_> = ctx.accounts.pool.to_account_info();
     let stake_mint_key = ctx.accounts.stake_mint.key();
 
-    let (_pool_key, pool_bump) = Pubkey::find_program_address(
-        &[POOL_SEED, stake_mint_key.as_ref()],
-        ctx.program_id
-    );
+    let (_pool_key, pool_bump) =
+        Pubkey::find_program_address(&[POOL_SEED, stake_mint_key.as_ref()], ctx.program_id);
     let seeds: &[&[u8]] = &[POOL_SEED, stake_mint_key.as_ref(), &[pool_bump]];
     let signer_seeds = &[&seeds[..]];
 
@@ -211,7 +217,8 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
             .checked_mul(pool.reward_rate_per_day)
             .ok_or(StakingError::RewardOverflow)?;
         let add_per_token = reward.checked_div(pool.total_staked).unwrap();
-        pool.reward_per_token_stored = pool.reward_per_token_stored
+        pool.reward_per_token_stored = pool
+            .reward_per_token_stored
             .checked_add(add_per_token)
             .unwrap();
     }
@@ -238,14 +245,15 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
         let cpi_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
             cpi_accounts,
-            signer_seeds
+            signer_seeds,
         );
         transfer_checked(cpi_ctx, reward_amount, ctx.accounts.reward_mint.decimals)?;
         user.pending_rewards = 0;
     }
 
     // 4) Update user reward debt
-    user.reward_debt = user.amount_staked
+    user.reward_debt = user
+        .amount_staked
         .checked_mul(pool.reward_per_token_stored)
         .unwrap()
         .checked_div(PRECISION)
@@ -271,7 +279,8 @@ pub fn set_reward_rate(ctx: Context<SetRewardRate>, new_rate_per_day: u64) -> Re
             .checked_mul(pool.reward_rate_per_day)
             .ok_or(StakingError::RewardOverflow)?;
         let add_per_token = reward.checked_div(pool.total_staked).unwrap();
-        pool.reward_per_token_stored = pool.reward_per_token_stored
+        pool.reward_per_token_stored = pool
+            .reward_per_token_stored
             .checked_add(add_per_token)
             .unwrap();
     }
@@ -322,7 +331,7 @@ pub fn unpause_pool(ctx: Context<PausePool>) -> Result<()> {
 fn pending_reward(
     amount_staked: u128,
     reward_per_token_stored: u128,
-    reward_debt: u128
+    reward_debt: u128,
 ) -> Result<u128> {
     if reward_per_token_stored <= reward_debt {
         return Ok(0);
@@ -330,7 +339,9 @@ fn pending_reward(
     let delta = reward_per_token_stored
         .checked_sub(reward_debt)
         .ok_or(StakingError::RewardOverflow)?;
-    let gross = amount_staked.checked_mul(delta).ok_or(StakingError::RewardOverflow)?;
+    let gross = amount_staked
+        .checked_mul(delta)
+        .ok_or(StakingError::RewardOverflow)?;
     Ok(gross / PRECISION)
 }
 
@@ -349,10 +360,8 @@ pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
     let payout = principal_u64 - slash;
     msg!("payout: {}", payout);
 
-    let (_pool_pda, bump) = Pubkey::find_program_address(
-        &[POOL_SEED, stake_mint_key.as_ref()],
-        ctx.program_id
-    );
+    let (_pool_pda, bump) =
+        Pubkey::find_program_address(&[POOL_SEED, stake_mint_key.as_ref()], ctx.program_id);
     let seeds: &[&[u8]] = &[POOL_SEED, stake_mint_key.as_ref()];
     let signer_seeds: &[&[&[u8]]] = &[&[seeds[0], seeds[1], &[bump]]];
 
@@ -364,7 +373,7 @@ pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
             authority: pool.to_account_info(),
             mint: ctx.accounts.stake_mint.to_account_info(),
         },
-        signer_seeds
+        signer_seeds,
     );
     transfer_checked(cpi_ctx, payout, ctx.accounts.stake_mint.decimals)?;
 

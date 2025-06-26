@@ -2,7 +2,7 @@ use crate::state::*;
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_2022::{ mint_to, MintTo, transfer_checked, TransferChecked, Burn, burn },
+    token_2022::{ burn, mint_to, transfer_checked, Burn, MintTo, TransferChecked },
     token_interface::{ Mint, Token2022, TokenAccount },
 };
 use std::mem::size_of;
@@ -356,21 +356,9 @@ pub struct LiquidityPool<'info> {
     pub admin: Signer<'info>,
     pub token_a_mint: Box<InterfaceAccount<'info, Mint>>,
     pub token_b_mint: Box<InterfaceAccount<'info, Mint>>,
-    #[account(
-        init_if_needed,
-        associated_token::mint = token_a_mint,
-        associated_token::authority = pool,
-        associated_token::token_program = token_program,
-        payer = admin
-    )]
+    #[account(mut)]
     pub vault_token_a: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(
-        init_if_needed,
-        associated_token::mint = token_b_mint,
-        associated_token::authority = pool,
-        associated_token::token_program = token_program,
-        payer = admin
-    )]
+    #[account(mut)]
     pub vault_token_b: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init_if_needed,
@@ -382,7 +370,6 @@ pub struct LiquidityPool<'info> {
     pub pool: Box<Account<'info, LiquidityPoolAMM>>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token2022>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     #[account(
         init,
         seeds = [b"lp_mint", pool.key().as_ref()],
@@ -409,28 +396,13 @@ pub struct AddLiquidity<'info> {
     pub vault_b: InterfaceAccount<'info, TokenAccount>,
     #[account(mut,has_one = vault_a, has_one = vault_b)]
     pub pool: Account<'info, LiquidityPoolAMM>,
-    #[account(
-        init_if_needed,
-        associated_token::mint = token_a_mint,
-        associated_token::authority = depositor,
-        payer = depositor
-    )]
+    #[account(mut)]
     pub user_token_a_account: InterfaceAccount<'info, TokenAccount>,
-    #[account(
-        init_if_needed,
-        associated_token::mint = token_b_mint,
-        associated_token::authority = depositor,
-        payer = depositor
-    )]
+    #[account(mut)]
     pub user_token_b_account: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub lp_mint: InterfaceAccount<'info, Mint>,
-    #[account(
-        init_if_needed,
-        associated_token::mint = lp_mint,
-        associated_token::authority = depositor,
-        payer = depositor
-    )]
+    #[account(mut)]
     pub user_lp_mint_account: InterfaceAccount<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token2022>,
@@ -449,16 +421,15 @@ pub struct RemoveLiquidity<'info> {
     pub token_b_mint: InterfaceAccount<'info, Mint>,
     #[account(mut,has_one = vault_a, has_one = vault_b)]
     pub pool: Account<'info, LiquidityPoolAMM>,
-    #[account(mut, associated_token::mint = pool.token_a_mint, associated_token::authority = owner)]
+    #[account(mut)]
     pub user_token_a_account: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut, associated_token::mint = pool.token_b_mint, associated_token::authority = owner)]
+    #[account(mut)]
     pub user_token_b_account: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub lp_mint: InterfaceAccount<'info, Mint>,
-    #[account(mut,associated_token::mint = lp_mint, associated_token::authority = owner)]
+    #[account(mut,)]
     pub user_lp_mint_account: InterfaceAccount<'info, TokenAccount>,
     pub token_program: Program<'info, Token2022>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -469,10 +440,13 @@ pub struct Swap<'info> {
     pub pool: Account<'info, LiquidityPoolAMM>,
     #[account(mut)]
     pub vault_in: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut)] pub vault_out: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub vault_out: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(mut)] pub user_in: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut)] pub user_out: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_in: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_out: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut)]
     pub token_a_mint: InterfaceAccount<'info, Mint>,

@@ -4,6 +4,8 @@ import {
   getAccount,
   getMint,
   getAssociatedTokenAddressSync,
+  createAssociatedTokenAccount,
+  createAssociatedTokenAccountIdempotent,
 } from "@solana/spl-token";
 import {
   PublicKey,
@@ -39,21 +41,27 @@ const bal = async (pk: PublicKey) =>
       await getAccount(provider.connection, pk, undefined, TOKEN_2022_ID)
     ).amount.toString()
   );
+
+const extraPda = (mint: PublicKey) =>
+  PublicKey.findProgramAddressSync(
+    [Buffer.from("extra-account-metas"), mint.toBuffer()],
+    program.programId
+  )[0];
+
 const AIRDROP_AMOUNT_SOL = 2;
-let mint2Keypair = Keypair.generate();
-let mint2pubKey = mint2Keypair.publicKey;
-let mint0Pda: PublicKey;
-let mint1Pda: PublicKey;
-let tokenAata: PublicKey;
-let tokenBata: PublicKey;
-let extraMetasAccountMint0: PublicKey;
-let extraMetasAccountMint1: PublicKey;
-let lp_poolPda: PublicKey;
-let lp_poolBump: Number;
-let vaultA_ata: PublicKey;
-let vaultB_ata: PublicKey;
-let lpMintPda: PublicKey;
-let userMintPda: PublicKey;
+let mintA: PublicKey,
+  mintB: PublicKey,
+  userA: PublicKey,
+  userB: PublicKey,
+  poolPda: PublicKey,
+  vaultA: PublicKey,
+  vaultB: PublicKey,
+  lpMint: PublicKey,
+  userLp: PublicKey,
+  xMetasA: PublicKey,
+  xMetasB: PublicKey,
+  payerBata: PublicKey;
+const other = Keypair.generate();
 
 let decimals_0 = 9;
 let TOKEN_NAME_0 = "Pengu B Coin";
@@ -70,49 +78,49 @@ let METADATA_URI_1 =
 describe("Amm_Program", () => {
   before("derive PDAs", async () => {
     await provider.connection.requestAirdrop(
-      mint2pubKey,
+      other.publicKey,
       AIRDROP_AMOUNT_SOL * LAMPORTS_PER_SOL
     );
     console.log("Airdrop Successfully");
 
-    [mint0Pda] = PublicKey.findProgramAddressSync(
+    [mintA] = PublicKey.findProgramAddressSync(
       [Buffer.from("mint"), payer.publicKey.toBuffer()],
       program.programId
     );
 
-    [mint1Pda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("mint"), mint2Keypair.publicKey.toBuffer()],
+    [mintB] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), other.publicKey.toBuffer()],
       program.programId
     );
-    [extraMetasAccountMint0] = PublicKey.findProgramAddressSync(
-      [Buffer.from("extra-account-metas"), mint0Pda.toBuffer()],
-      program.programId
-    );
-
-    [extraMetasAccountMint1] = PublicKey.findProgramAddressSync(
-      [Buffer.from("extra-account-metas"), mint1Pda.toBuffer()],
+    [xMetasA] = PublicKey.findProgramAddressSync(
+      [Buffer.from("extra-account-metas"), mintA.toBuffer()],
       program.programId
     );
 
-    tokenAata = associatedAddress({
-      mint: mint0Pda,
+    [xMetasB] = PublicKey.findProgramAddressSync(
+      [Buffer.from("extra-account-metas"), mintB.toBuffer()],
+      program.programId
+    );
+
+    userA = associatedAddress({
+      mint: mintA,
       owner: provider.wallet.publicKey,
     });
-    tokenBata = associatedAddress({
-      mint: mint1Pda,
-      owner: mint2Keypair.publicKey,
+    userB = associatedAddress({
+      mint: mintB,
+      owner: other.publicKey,
     });
 
-    console.log("mint0Pda : ", mint0Pda.toString());
-    console.log("mint1Pda : ", mint1Pda.toString());
-    console.log("extraMetasAccountMint0 : ", extraMetasAccountMint0.toString());
-    console.log("extraMetasAccountMint1 : ", extraMetasAccountMint1.toString());
-    console.log("tokenAata : ", tokenAata.toString());
-    console.log("tokenBata : ", tokenBata.toString());
+    console.log("mintA : ", mintA.toString());
+    console.log("mintB : ", mintB.toString());
+    console.log("xMetasA : ", xMetasA.toString());
+    console.log("xMetasB : ", xMetasB.toString());
+    console.log("userA : ", userA.toString());
+    console.log("userB : ", userB.toString());
   });
 
   it("createMintAccount: initializes mint + ATA with zero balance", async () => {
-    await program.methods
+    const sigA = await program.methods
       .createMintAccount(
         decimals_0,
         TOKEN_NAME_0,
@@ -123,24 +131,25 @@ describe("Amm_Program", () => {
         payer: payer.publicKey,
         authority: payer.publicKey,
         receiver: payer.publicKey,
-        mint: mint0Pda,
-        mintTokenAccount: tokenAata,
-        extraMetasAccount: extraMetasAccountMint0,
+        mint: mintA,
+        mintTokenAccount: userA,
+        extraMetasAccount: xMetasA,
         systemProgram: anchor.web3.SystemProgram.programId,
         associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
         tokenProgram: TOKEN_2022_ID,
       })
       .signers([payer])
       .rpc();
+    await provider.connection.confirmTransaction(sigA, "confirmed");
 
     const acct = await getAccount(
       provider.connection,
-      tokenAata,
+      userA,
       undefined,
       TOKEN_2022_ID
     );
 
-    await program.methods
+    const sigB = await program.methods
       .createMintAccount(
         decimals_1,
         TOKEN_NAME_1,
@@ -148,22 +157,23 @@ describe("Amm_Program", () => {
         METADATA_URI_1
       )
       .accountsStrict({
-        payer: mint2pubKey,
-        authority: mint2pubKey,
-        receiver: mint2pubKey,
-        mint: mint1Pda,
-        mintTokenAccount: tokenBata,
-        extraMetasAccount: extraMetasAccountMint1,
+        payer: other.publicKey,
+        authority: other.publicKey,
+        receiver: other.publicKey,
+        mint: mintB,
+        mintTokenAccount: userB,
+        extraMetasAccount: xMetasB,
         systemProgram: anchor.web3.SystemProgram.programId,
         associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
         tokenProgram: TOKEN_2022_ID,
       })
-      .signers([mint2Keypair])
+      .signers([other])
       .rpc();
+    await provider.connection.confirmTransaction(sigB, "confirmed");
 
     const acct1 = await getAccount(
       provider.connection,
-      tokenBata,
+      userB,
       undefined,
       TOKEN_2022_ID
     );
@@ -177,8 +187,8 @@ describe("Amm_Program", () => {
     await program.methods
       .mintTokens(mintAmount)
       .accountsStrict({
-        mint: mint0Pda,
-        to: tokenAata,
+        mint: mintA,
+        to: userA,
         authority: payer.publicKey,
         tokenProgram: TOKEN_2022_ID,
       })
@@ -187,25 +197,44 @@ describe("Amm_Program", () => {
 
     const acct = await getAccount(
       provider.connection,
-      tokenAata,
+      userA,
       undefined,
       TOKEN_2022_ID
+    );
+
+    payerBata = getAssociatedTokenAddressSync(
+      mintB,
+      payer.publicKey,
+      true,
+      TOKEN_2022_ID,
+      ASSOCIATED_PROGRAM_ID
+    );
+    // create & mint into it:
+    await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      payer,
+      mintB,
+      payer.publicKey /* owner = payer */,
+      undefined,
+      TOKEN_2022_ID,
+      ASSOCIATED_PROGRAM_ID,
+      /*allowOffCurve=*/ false
     );
 
     await program.methods
       .mintTokens(mintAmount)
       .accountsStrict({
-        mint: mint1Pda,
-        to: tokenBata,
-        authority: mint2pubKey,
+        mint: mintB,
+        to: payerBata,
+        authority: other.publicKey,
         tokenProgram: TOKEN_2022_ID,
       })
-      .signers([mint2Keypair])
+      .signers([other])
       .rpc();
 
     const acct1 = await getAccount(
       provider.connection,
-      tokenBata,
+      payerBata,
       undefined,
       TOKEN_2022_ID
     );
@@ -214,55 +243,55 @@ describe("Amm_Program", () => {
   });
 
   it("Initialize the Liquidity pool", async () => {
-    [lp_poolPda, lp_poolBump] = PublicKey.findProgramAddressSync(
-      [LIQUIDITY_POOL, mint0Pda.toBuffer(), mint1Pda.toBuffer()],
+    [poolPda] = PublicKey.findProgramAddressSync(
+      [LIQUIDITY_POOL, mintA.toBuffer(), mintB.toBuffer()],
       program.programId
     );
 
-    vaultA_ata = getAssociatedTokenAddressSync(
-      mint0Pda,
-      lp_poolPda,
-      true,
+    vaultA = getAssociatedTokenAddressSync(mintA, poolPda, true, TOKEN_2022_ID);
+    await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      payer,
+      mintA,
+      poolPda,
+      undefined,
       TOKEN_2022_ID,
-      ASSOCIATED_PROGRAM_ID
+      ASSOCIATED_PROGRAM_ID,
+      true
     );
 
-    vaultB_ata = getAssociatedTokenAddressSync(
-      mint1Pda,
-      lp_poolPda,
-      true,
+    vaultB = getAssociatedTokenAddressSync(mintB, poolPda, true, TOKEN_2022_ID);
+    await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      payer,
+      mintB,
+      poolPda,
+      undefined,
       TOKEN_2022_ID,
-      ASSOCIATED_PROGRAM_ID
+      ASSOCIATED_PROGRAM_ID,
+      true
     );
 
-    [lpMintPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("lp_mint"), lp_poolPda.toBuffer()],
+    [lpMint] = PublicKey.findProgramAddressSync(
+      [Buffer.from("lp_mint"), poolPda.toBuffer()],
       program.programId
     );
 
-    userMintPda = getAssociatedTokenAddressSync(
-      lpMintPda,
-      payer.publicKey,
-      true,
-      TOKEN_2022_ID,
-      ASSOCIATED_PROGRAM_ID
-    );
-    console.log("lp_poolPda : ", lp_poolPda.toString());
-    console.log("vaultA_ata : ", vaultA_ata.toString());
-    console.log("vaultB_ata : ", vaultB_ata.toString());
-    console.log("lpMintPda : ", lpMintPda.toString());
-    console.log("userMintPda : ", userMintPda.toString());
+    console.log("poolPda : ", poolPda.toString());
+    console.log("vaultA_ata : ", vaultA.toString());
+    console.log("vaultB_ata : ", vaultB.toString());
+    console.log("lpMintPda : ", lpMint.toString());
 
     await program.methods
       .initializeLiquidityPoolAmm("PBC/DBC", 30)
       .accountsStrict({
         admin: payer.publicKey,
-        tokenAMint: mint0Pda,
-        tokenBMint: mint1Pda,
-        vaultTokenA: vaultA_ata,
-        vaultTokenB: vaultB_ata,
-        pool: lp_poolPda,
-        lpMint: lpMintPda,
+        tokenAMint: mintA,
+        tokenBMint: mintB,
+        vaultTokenA: vaultA,
+        vaultTokenB: vaultB,
+        pool: poolPda,
+        lpMint: lpMint,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_ID,
         associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
@@ -270,26 +299,45 @@ describe("Amm_Program", () => {
       })
       .signers([payer])
       .rpc();
+
+    userLp = getAssociatedTokenAddressSync(
+      lpMint,
+      payer.publicKey,
+      false,
+      TOKEN_2022_ID,
+      ASSOCIATED_PROGRAM_ID
+    );
+    console.log("userMintPda : ", userLp.toString());
+    await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      payer,
+      lpMint,
+      payer.publicKey,
+      undefined,
+      TOKEN_2022_ID,
+      ASSOCIATED_PROGRAM_ID,
+      false
+    );
   });
 
   it("Add Liquidity", async () => {
     await program.methods
       .addLiquidityAmm(
-        new anchor.BN(200).mul(new anchor.BN(10 ** 9)),
-        new anchor.BN(200).mul(new anchor.BN(10 ** 9))
+        new anchor.BN(200).mul(PRECISION),
+        new anchor.BN(200).mul(PRECISION)
       )
       .accountsStrict({
         depositor: payer.publicKey,
-        tokenAMint: mint0Pda,
-        tokenBMint: mint1Pda,
-        vaultA: vaultA_ata,
-        vaultB: vaultB_ata,
-        pool: lp_poolPda,
-        lpMint: lpMintPda,
-        userTokenAAccount: tokenAata,
-        userTokenBAccount: tokenBata,
-        userLpMintAccount: userMintPda,
-        // systemProgram: SystemProgram.programId,
+        tokenAMint: mintA,
+        tokenBMint: mintB,
+        vaultA: vaultA,
+        vaultB: vaultB,
+        pool: poolPda,
+        lpMint: lpMint,
+        userTokenAAccount: userA,
+        userTokenBAccount: payerBata,
+        userLpMintAccount: userLp,
+        systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_ID,
         associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
       })
@@ -301,9 +349,10 @@ describe("Amm_Program", () => {
     const amount_out = await program.methods
       .quoteAmm(new anchor.BN(10).mul(new anchor.BN(10 ** 9)))
       .accountsStrict({
-        pool: lp_poolPda,
+        pool: poolPda,
       })
-      .rpc();
+      .view();
+    console.log("amount_out : ", amount_out);
 
     await program.methods
       .swapAmm(
@@ -312,16 +361,15 @@ describe("Amm_Program", () => {
       )
       .accountsStrict({
         swapper: payer.publicKey,
-        pool: lp_poolPda,
-        vaultIn: vaultA_ata,
-        vaultOut: vaultB_ata,
-        userIn: tokenAata,
-        userOut: tokenBata,
-        tokenAMint: mint0Pda,
-        tokenBMint: mint1Pda,
+        pool: poolPda,
+        vaultIn: vaultA,
+        vaultOut: vaultB,
+        userIn: userA,
+        userOut: userB,
+        tokenAMint: mintA,
+        tokenBMint: mintB,
         tokenProgram: TOKEN_2022_ID,
       })
-      .signers([payer])
       .rpc();
   });
 
@@ -330,19 +378,18 @@ describe("Amm_Program", () => {
       .removeLiquidityAmm(new anchor.BN(10).mul(new anchor.BN(10 ** 9)))
       .accountsStrict({
         owner: payer.publicKey,
-        vaultA: vaultA_ata,
-        vaultB: vaultB_ata,
-        tokenAMint: mint0Pda,
-        tokenBMint: mint1Pda,
-        pool: lp_poolPda,
-        userTokenAAccount: tokenAata,
-        userTokenBAccount: tokenBata,
-        lpMint: lpMintPda,
-        userLpMintAccount: userMintPda,
+        vaultA: vaultA,
+        vaultB: vaultB,
+        tokenAMint: mintA,
+        tokenBMint: mintB,
+        pool: poolPda,
+        userTokenAAccount: userA,
+        userTokenBAccount: userB,
+        lpMint: lpMint,
+        userLpMintAccount: userLp,
         tokenProgram: TOKEN_2022_ID,
         associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
       })
-      .signers([payer])
       .rpc();
   });
 });
