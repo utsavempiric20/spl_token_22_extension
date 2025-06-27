@@ -139,6 +139,19 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
 
     let amount_a = checked_mul(lp_amount as u128, pool.reserve_a)? / lp_supply;
     let amount_b = checked_mul(lp_amount as u128, pool.reserve_b)? / lp_supply;
+    msg!("pool.reserve_a : {:?}", pool.reserve_a);
+    msg!("pool.reserve_a : {:?}", pool.reserve_b);
+    msg!("vault_b : {:?}", vault_b);
+    msg!("amount_a : {}", amount_a);
+    msg!("amount_b : {}", amount_b);
+    msg!(
+        "user_token_a_account before : {:?}",
+        ctx.accounts.user_token_a_account.amount.to_string()
+    );
+    msg!(
+        "user_token_b_account before : {:?}",
+        ctx.accounts.user_token_b_account.amount.to_string()
+    );
 
     burn(
         CpiContext::new(ctx.accounts.token_program.to_account_info(), Burn {
@@ -190,7 +203,14 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
         amount_b as u64,
         ctx.accounts.token_b_mint.decimals
     )?;
-
+    msg!(
+        "user_token_a_account before : {:?}",
+        ctx.accounts.user_token_a_account.amount.to_string()
+    );
+    msg!(
+        "user_token_b_account before : {:?}",
+        ctx.accounts.user_token_b_account.amount.to_string()
+    );
     pool.reserve_a -= amount_a;
     pool.reserve_b -= amount_b;
     pool.total_lp_supply = lp_supply - (lp_amount as u128);
@@ -496,16 +516,16 @@ pub struct SwapExecuted {
 
 #[error_code]
 pub enum AmmError {
-    #[msg("Math overflow")]
+    #[msg("math overflow")]
     MathOverflow,
-    #[msg("Invalid fee")]
+    #[msg("invalid fee")]
     InvalidFee,
-    #[msg("Token-B amount exceeds optimum")]
+    #[msg("token-b amount exceeds optimum")]
     ExcessiveB,
-    #[msg("LP amount invalid")]
+    #[msg("lp amount invalid")]
     InvalidLp,
-    #[msg("Pool reserves are zero")]
+    #[msg("pool reserves are zero")]
     EmptyPool,
-    #[msg("Slippage tolerance exceeded")]
+    #[msg("slippage tolerance exceeded")]
     SlippageExceeded,
 }

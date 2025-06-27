@@ -321,11 +321,25 @@ describe("Amm_Program", () => {
   });
 
   it("Add Liquidity", async () => {
+    const tokenA = new anchor.BN(100).mul(PRECISION);
+    const tokenB = new anchor.BN(400).mul(PRECISION);
+
+    const beforeA = await bal(userA);
+    const beforeB = await bal(payerBata);
+    const beforeVaultA = await bal(vaultA);
+    const beforeVaultB = await bal(vaultB);
+    const beforeLpSupply = (
+      await getMint(provider.connection, lpMint, undefined, TOKEN_2022_ID)
+    ).supply;
+
+    console.log("beforeA: ", beforeA.toNumber());
+    console.log("beforeB: ", beforeB.toNumber());
+    console.log("beforeVaultA: ", beforeVaultA.toNumber());
+    console.log("beforeVaultB: ", beforeVaultB.toNumber());
+    console.log("beforeLpSupply: ", beforeLpSupply.toString());
+
     await program.methods
-      .addLiquidityAmm(
-        new anchor.BN(200).mul(PRECISION),
-        new anchor.BN(200).mul(PRECISION)
-      )
+      .addLiquidityAmm(tokenA, tokenB)
       .accountsStrict({
         depositor: payer.publicKey,
         tokenAMint: mintA,
@@ -343,22 +357,54 @@ describe("Amm_Program", () => {
       })
       .signers([payer])
       .rpc();
+
+    const afterA = await bal(userA);
+    const afterB = await bal(payerBata);
+    const afterVaultA = await bal(vaultA);
+    const afterVaultB = await bal(vaultB);
+    const afterLpSupply = (
+      await getMint(provider.connection, lpMint, undefined, TOKEN_2022_ID)
+    ).supply;
+
+    console.log("afterA: ", afterA.toNumber());
+    console.log("afterB: ", afterB.toNumber());
+    console.log("afterVaultA: ", afterVaultA.toNumber());
+    console.log("afterVaultB: ", afterVaultB.toNumber());
+    console.log("afterLpSupply: ", afterLpSupply.toString());
+
+    expect(afterA).to.be.bignumber.eq(beforeA.sub(tokenA));
+    expect(afterB).to.be.bignumber.eq(beforeB.sub(tokenB));
+
+    expect(afterVaultA).to.be.bignumber.eq(beforeVaultA.add(tokenA));
+    expect(afterVaultB).to.be.bignumber.eq(beforeVaultB.add(tokenB));
+
+    // const expectedLp = tokenA.mul(tokenB).sqr();
+    // expect(new anchor.BN(afterLpSupply.toString())).to.be.bignumber.eq(
+    //   new anchor.BN(beforeLpSupply.toString()).add(expectedLp)
+    // );
   });
 
   it("Swap Tokens", async () => {
+    const amount_to_swap = new anchor.BN(10).mul(PRECISION);
     const amount_out = await program.methods
-      .quoteAmm(new anchor.BN(10).mul(new anchor.BN(10 ** 9)))
+      .quoteAmm(amount_to_swap)
       .accountsStrict({
         pool: poolPda,
       })
       .view();
-    console.log("amount_out : ", amount_out);
+
+    const userA_beforeSwap = await bal(userA);
+    const userB_beforeSwap = await bal(userB);
+    const vaultA_beforeSwap = await bal(vaultA);
+    const vaultB_beforeSwap = await bal(vaultB);
+
+    console.log("userA_beforeSwap : ", userA_beforeSwap.toNumber());
+    console.log("userB_beforeSwap : ", userB_beforeSwap.toNumber());
+    console.log("vaultA_beforeSwap : ", vaultA_beforeSwap.toNumber());
+    console.log("vaultB_beforeSwap : ", vaultB_beforeSwap.toNumber());
 
     await program.methods
-      .swapAmm(
-        new anchor.BN(10).mul(new anchor.BN(10 ** 9)),
-        new anchor.BN(amount_out)
-      )
+      .swapAmm(amount_to_swap, new anchor.BN(amount_out))
       .accountsStrict({
         swapper: payer.publicKey,
         pool: poolPda,
@@ -371,11 +417,54 @@ describe("Amm_Program", () => {
         tokenProgram: TOKEN_2022_ID,
       })
       .rpc();
+
+    const userA_afterSwap = await bal(userA);
+    const userB_afterSwap = await bal(userB);
+    const vaultA_afterSwap = await bal(vaultA);
+    const vaultB_afterSwap = await bal(vaultB);
+
+    console.log("userA_afterSwap : ", userA_afterSwap.toNumber());
+    console.log("userB_afterSwap : ", userB_afterSwap.toNumber());
+    console.log("vaultA_afterSwap : ", vaultA_afterSwap.toNumber());
+    console.log("vaultB_afterSwap : ", vaultB_afterSwap.toNumber());
+
+    expect(userA_afterSwap).to.be.bignumber.eq(
+      userA_beforeSwap.sub(amount_to_swap)
+    );
+    expect(userB_afterSwap).to.be.bignumber.eq(
+      userB_beforeSwap.add(amount_out)
+    );
+    expect(vaultA_afterSwap).to.be.bignumber.eq(
+      vaultA_beforeSwap.add(amount_to_swap)
+    );
+    expect(vaultB_afterSwap).to.be.bignumber.eq(
+      vaultB_beforeSwap.sub(amount_out)
+    );
   });
 
   it("Remove Liqudity", async () => {
+    const remove_liquidity_amount = new anchor.BN(10).mul(PRECISION);
+    const pool = await program.account.liquidityPoolAmm.fetch(poolPda);
+    const userA_before = await bal(userA);
+    const userB_before = await bal(userB);
+    const vaultA_before = await bal(vaultA);
+    const vaultB_before = await bal(vaultB);
+    const liqudity_before = (
+      await getMint(provider.connection, lpMint, undefined, TOKEN_2022_ID)
+    ).supply;
+    const reserveA = new anchor.BN(pool.reserveA);
+    const reserveB = new anchor.BN(pool.reserveB);
+
+    console.log("reserveA : ", reserveA.toNumber());
+    console.log("reserveB : ", reserveB.toNumber());
+    console.log("userA_before : ", userA_before.toNumber());
+    console.log("userB_before : ", userB_before.toNumber());
+    console.log("vaultA_before : ", vaultA_before.toNumber());
+    console.log("vaultB_before : ", vaultB_before.toNumber());
+    console.log("liqudity_before : ", liqudity_before.toString());
+
     await program.methods
-      .removeLiquidityAmm(new anchor.BN(10).mul(new anchor.BN(10 ** 9)))
+      .removeLiquidityAmm(remove_liquidity_amount)
       .accountsStrict({
         owner: payer.publicKey,
         vaultA: vaultA,
@@ -391,6 +480,38 @@ describe("Amm_Program", () => {
         associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
       })
       .rpc();
+
+    const userA_after = await bal(userA);
+    const userB_after = await bal(userB);
+    const vaultA_after = await bal(vaultA);
+    const vaultB_after = await bal(vaultB);
+    const liqudity_after = (
+      await getMint(provider.connection, lpMint, undefined, TOKEN_2022_ID)
+    ).supply;
+
+    console.log("userA_after : ", userA_after.toNumber());
+    console.log("userB_after : ", userB_after.toNumber());
+    console.log("vaultA_after : ", vaultA_after.toNumber());
+    console.log("vaultB_after : ", vaultB_after.toNumber());
+    console.log("liqudity_after : ", liqudity_after.toString());
+
+    const amountAout = remove_liquidity_amount
+      .mul(reserveA)
+      .div(new anchor.BN(liqudity_before.toString()));
+    const amountBout = remove_liquidity_amount
+      .mul(reserveB)
+      .div(new anchor.BN(liqudity_before.toString()));
+
+    console.log("amountAout : ", amountAout.toNumber());
+    console.log("amountBout : ", amountBout.toNumber());
+
+    expect(userA_after).to.be.bignumber.eq(userA_before.add(amountAout));
+    expect(userB_after).to.be.bignumber.eq(userB_before.add(amountBout));
+    expect(vaultA_after).to.be.bignumber.eq(vaultA_before.sub(amountAout));
+    expect(vaultB_after).to.be.bignumber.eq(vaultB_before.sub(amountBout));
+    expect(new anchor.BN(liqudity_after.toString())).to.be.bignumber.eq(
+      new anchor.BN(liqudity_before.toString()).sub(remove_liquidity_amount)
+    );
   });
 });
 
