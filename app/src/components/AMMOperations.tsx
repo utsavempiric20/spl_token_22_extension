@@ -8,13 +8,22 @@ import {
 } from "@solana/wallet-adapter-react";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import type { Idl } from "@coral-xyz/anchor";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import {
+  PublicKey,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+  Transaction,
+} from "@solana/web3.js";
+import {
+  createAssociatedTokenAccountInstruction,
+  getAccount,
+  getAssociatedTokenAddressSync,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import idl from "../idl/spl.json";
 import type { Spl } from "../idl/spl";
 import "../styles/AMMOperations.css";
-
 
 function associatedAddress({
   mint,
@@ -28,9 +37,44 @@ function associatedAddress({
     ASSOCIATED_PROGRAM_ID
   )[0];
 }
+async function ensureAta(
+  provider: AnchorProvider,
+  mint: PublicKey,
+  owner: PublicKey
+): Promise<PublicKey> {
+  const ata = getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    true,
+    TOKEN_2022_PROGRAM_ID,
+    ASSOCIATED_PROGRAM_ID
+  );
 
+  try {
+    await getAccount(
+      provider.connection,
+      ata,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    return ata;
+  } catch {
+    const ix = createAssociatedTokenAccountInstruction(
+      provider.wallet.publicKey,
+      ata,
+      owner,
+      mint,
+      TOKEN_2022_PROGRAM_ID,
+      ASSOCIATED_PROGRAM_ID
+    );
+
+    const tx = new Transaction().add(ix);
+    const sig = await provider.sendAndConfirm(tx);
+    console.log("created ata", ata.toBase58(), sig);
+    return ata;
+  }
+}
 const LIQUIDITY_POOL = Buffer.from("liquidity_pool");
-const PRECISION = new BN(10).pow(new BN(9));
 
 export const AMMOperations: React.FC = () => {
   const { connection } = useConnection();
@@ -48,8 +92,9 @@ export const AMMOperations: React.FC = () => {
   const [swapTokenIn, setSwapTokenIn] = useState("");
   const [swapTokenOut, setSwapTokenOut] = useState("");
   const [swapAmount, setSwapAmount] = useState("");
-  const [swapSlippage, setSwapSlippage] = useState("0.5");
   const [poolAddress, setPoolAddress] = useState("");
+  const [quotedAmountOut, setQuotedAmountOut] = useState<string>("");
+  const [isQuoting, setIsQuoting] = useState(false);
 
   const [addTokenA, setAddTokenA] = useState("");
   const [addTokenB, setAddTokenB] = useState("");
@@ -59,7 +104,6 @@ export const AMMOperations: React.FC = () => {
 
   const [removePoolAddress, setRemovePoolAddress] = useState("");
   const [removeAmount, setRemoveAmount] = useState("");
-  const [removePercentage, setRemovePercentage] = useState("25");
 
   const getProvider = () => {
     if (!solanaWallet.publicKey) throw new Error("Wallet not connected!");
@@ -77,6 +121,44 @@ export const AMMOperations: React.FC = () => {
     setTimeout(() => setStatus(""), 8000);
   };
 
+  const autoQuote = async () => {
+    if (!poolAddress || !swapAmount || !solanaWallet.publicKey) {
+      setQuotedAmountOut("");
+      return;
+    }
+
+    try {
+      setIsQuoting(true);
+      const provider = getProvider();
+      const program = getProgram(provider);
+      const poolPk = new PublicKey(poolAddress);
+      const amountIn = new BN(parseFloat(swapAmount) * 10 ** 9);
+
+      const amountOut = await program.methods
+        .quoteAmm(amountIn)
+        .accountsStrict({
+          pool: poolPk,
+        })
+        .view();
+
+      const amountOutFormatted = (amountOut.toNumber() / 10 ** 9).toFixed(9);
+      setQuotedAmountOut(amountOutFormatted);
+    } catch (error) {
+      console.error("Quote error:", error);
+      setQuotedAmountOut("Error getting quote");
+    } finally {
+      setIsQuoting(false);
+    }
+  };
+
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      autoQuote();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [poolAddress, swapAmount]);
+
   const initializeLiquidityPool = async () => {
     try {
       if (!solanaWallet.publicKey)
@@ -91,23 +173,16 @@ export const AMMOperations: React.FC = () => {
       const tokenAMintPk = new PublicKey(tokenAMint);
       const tokenBMintPk = new PublicKey(tokenBMint);
 
-
       const [poolPda] = PublicKey.findProgramAddressSync(
         [LIQUIDITY_POOL, tokenAMintPk.toBuffer(), tokenBMintPk.toBuffer()],
         program.programId
       );
 
+      const vaultA = await ensureAta(provider, tokenAMintPk, poolPda);
+      const vaultB = await ensureAta(provider, tokenBMintPk, poolPda);
 
-      const vaultA = associatedAddress({
-        mint: tokenAMintPk,
-        owner: poolPda,
-      });
-
-      const vaultB = associatedAddress({
-        mint: tokenBMintPk,
-        owner: poolPda,
-      });
-
+      console.log("vaultA", vaultA.toBase58());
+      console.log("vaultB", vaultB.toBase58());
 
       const [lpMint] = PublicKey.findProgramAddressSync(
         [Buffer.from("lp_mint"), poolPda.toBuffer()],
@@ -153,6 +228,8 @@ export const AMMOperations: React.FC = () => {
       if (!swapTokenIn || !swapTokenOut)
         throw new Error("Please enter both token addresses");
       if (!swapAmount) throw new Error("Please enter swap amount");
+      if (!quotedAmountOut || quotedAmountOut === "Error getting quote")
+        throw new Error("Please wait for quote to complete");
 
       const provider = getProvider();
       const program = getProgram(provider);
@@ -160,16 +237,8 @@ export const AMMOperations: React.FC = () => {
       const tokenInPk = new PublicKey(swapTokenIn);
       const tokenOutPk = new PublicKey(swapTokenOut);
       const amountIn = new BN(parseFloat(swapAmount) * 10 ** 9);
+      const amountOut = new BN(parseFloat(quotedAmountOut) * 10 ** 9);
 
-
-      const amountOut = await program.methods
-        .quoteAmm(amountIn)
-        .accountsStrict({
-          pool: poolPk,
-        })
-        .view();
-
-  
       const vaultIn = associatedAddress({
         mint: tokenInPk,
         owner: poolPk,
@@ -180,16 +249,16 @@ export const AMMOperations: React.FC = () => {
         owner: poolPk,
       });
 
-    
-      const userIn = associatedAddress({
-        mint: tokenInPk,
-        owner: solanaWallet.publicKey,
-      });
-
-      const userOut = associatedAddress({
-        mint: tokenOutPk,
-        owner: solanaWallet.publicKey,
-      });
+      const userIn = await ensureAta(
+        provider,
+        tokenInPk,
+        solanaWallet.publicKey
+      );
+      const userOut = await ensureAta(
+        provider,
+        tokenOutPk,
+        solanaWallet.publicKey
+      );
 
       const tx = await program.methods
         .swapAmm(amountIn, amountOut)
@@ -207,9 +276,7 @@ export const AMMOperations: React.FC = () => {
         .rpc();
 
       showStatus(
-        `Swap completed successfully!\nAmount Out: ${
-          amountOut.toNumber() / 10 ** 9
-        }\nTransaction: ${tx}`
+        `Swap completed successfully!\nAmount Out: ${quotedAmountOut}\nTransaction: ${tx}`
       );
     } catch (error: unknown) {
       console.error("Swap error:", error);
@@ -240,7 +307,6 @@ export const AMMOperations: React.FC = () => {
       const amountA = new BN(parseFloat(addAmountA) * 10 ** 9);
       const amountB = new BN(parseFloat(addAmountB) * 10 ** 9);
 
-   
       const vaultA = associatedAddress({
         mint: tokenAPk,
         owner: poolPk,
@@ -251,27 +317,24 @@ export const AMMOperations: React.FC = () => {
         owner: poolPk,
       });
 
-
       const [lpMint] = PublicKey.findProgramAddressSync(
         [Buffer.from("lp_mint"), poolPk.toBuffer()],
         program.programId
       );
 
-      
-      const userTokenA = associatedAddress({
-        mint: tokenAPk,
-        owner: solanaWallet.publicKey,
-      });
+      const userTokenA = await ensureAta(
+        provider,
+        tokenAPk,
+        solanaWallet.publicKey
+      );
 
-      const userTokenB = associatedAddress({
-        mint: tokenBPk,
-        owner: solanaWallet.publicKey,
-      });
+      const userTokenB = await ensureAta(
+        provider,
+        tokenBPk,
+        solanaWallet.publicKey
+      );
 
-      const userLp = associatedAddress({
-        mint: lpMint,
-        owner: solanaWallet.publicKey,
-      });
+      const userLp = await ensureAta(provider, lpMint, solanaWallet.publicKey);
 
       const tx = await program.methods
         .addLiquidityAmm(amountA, amountB)
@@ -316,12 +379,10 @@ export const AMMOperations: React.FC = () => {
       const poolPk = new PublicKey(removePoolAddress);
       const removeAmountBN = new BN(parseFloat(removeAmount) * 10 ** 9);
 
-
       const pool = await program.account.liquidityPoolAmm.fetch(poolPk);
-      const tokenAPk = pool.tokenAMint;
-      const tokenBPk = pool.tokenBMint;
+      const tokenAPk = new PublicKey(pool.tokenAMint);
+      const tokenBPk = new PublicKey(pool.tokenBMint);
 
-  
       const vaultA = associatedAddress({
         mint: tokenAPk,
         owner: poolPk,
@@ -332,27 +393,24 @@ export const AMMOperations: React.FC = () => {
         owner: poolPk,
       });
 
-
       const [lpMint] = PublicKey.findProgramAddressSync(
         [Buffer.from("lp_mint"), poolPk.toBuffer()],
         program.programId
       );
 
-     
-      const userTokenA = associatedAddress({
-        mint: tokenAPk,
-        owner: solanaWallet.publicKey,
-      });
+      const userTokenA = await ensureAta(
+        provider,
+        tokenAPk,
+        solanaWallet.publicKey
+      );
 
-      const userTokenB = associatedAddress({
-        mint: tokenBPk,
-        owner: solanaWallet.publicKey,
-      });
+      const userTokenB = await ensureAta(
+        provider,
+        tokenBPk,
+        solanaWallet.publicKey
+      );
 
-      const userLp = associatedAddress({
-        mint: lpMint,
-        owner: solanaWallet.publicKey,
-      });
+      const userLp = await ensureAta(provider, lpMint, solanaWallet.publicKey);
 
       const tx = await program.methods
         .removeLiquidityAmm(removeAmountBN)
@@ -487,23 +545,42 @@ export const AMMOperations: React.FC = () => {
             />
           </div>
 
-          <div className="swap-settings">
-            <label>Slippage Tolerance</label>
-            <div className="slippage-input">
-              <input
-                type="number"
-                value={swapSlippage}
-                onChange={(e) => setSwapSlippage(e.target.value)}
-                step="0.1"
-                min="0.1"
-                max="50"
-              />
-              <span>%</span>
+          {/* Quote Display */}
+          <div className="quote-display">
+            <label>Estimated Amount Out</label>
+            <div className="quote-amount">
+              {isQuoting ? (
+                <span className="quote-loading">Calculating quote...</span>
+              ) : quotedAmountOut ? (
+                <span
+                  className={`quote-value ${
+                    quotedAmountOut === "Error getting quote"
+                      ? "error"
+                      : "success"
+                  }`}
+                >
+                  {quotedAmountOut === "Error getting quote"
+                    ? "Error getting quote"
+                    : `${quotedAmountOut} tokens`}
+                </span>
+              ) : (
+                <span className="quote-placeholder">
+                  Enter pool address and amount to see quote
+                </span>
+              )}
             </div>
           </div>
 
-          <button className="amm-button primary" onClick={handleSwap}>
-            Swap Tokens
+          <button
+            className="amm-button primary"
+            onClick={handleSwap}
+            disabled={
+              !quotedAmountOut ||
+              quotedAmountOut === "Error getting quote" ||
+              isQuoting
+            }
+          >
+            {isQuoting ? "Getting Quote..." : "Swap Tokens"}
           </button>
         </div>
       </div>

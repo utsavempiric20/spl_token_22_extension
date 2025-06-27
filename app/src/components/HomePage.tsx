@@ -20,25 +20,45 @@ export const HomePage: React.FC = () => {
             Your all-in-one platform for SPL tokens, staking, and automated
             market making
           </p>
-          <div className="hero-stats">
-            <div className="stat-item">
-              <span className="stat-number">$2.5B+</span>
-              <span className="stat-label">Total Value Locked</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">50K+</span>
-              <span className="stat-label">Active Users</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">100+</span>
-              <span className="stat-label">Supported Tokens</span>
-            </div>
+
+          <div className="hero-actions">
+            <button
+              className="hero-button primary"
+              onClick={() => handleNavigate("tokens")}
+            >
+              <span className="button-icon">🪙</span>
+              <span className="button-text">
+                <span className="button-title">SPL Tokens</span>
+                <span className="button-subtitle">Create & Manage</span>
+              </span>
+            </button>
+            <button
+              className="hero-button secondary"
+              onClick={() => handleNavigate("staking")}
+            >
+              <span className="button-icon">🔒</span>
+              <span className="button-text">
+                <span className="button-title">Staking</span>
+                <span className="button-subtitle">Earn Rewards</span>
+              </span>
+            </button>
+            <button
+              className="hero-button accent"
+              onClick={() => handleNavigate("amm")}
+            >
+              <span className="button-icon">💱</span>
+              <span className="button-text">
+                <span className="button-title">AMM Trading</span>
+                <span className="button-subtitle">Swap & Liquidity</span>
+              </span>
+            </button>
           </div>
         </div>
         <div className="hero-visual">
           <div className="floating-card card-1">🚀</div>
           <div className="floating-card card-2">💎</div>
           <div className="floating-card card-3">⚡</div>
+          <div className="floating-card card-4">🔮</div>
         </div>
       </div>
 

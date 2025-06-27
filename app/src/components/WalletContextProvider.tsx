@@ -19,7 +19,6 @@ interface Props {
   children: ReactNode;
 }
 
-// Create the wallet context
 export const WalletContext = createContext<{
   wallet: any;
   connected: boolean;
@@ -28,7 +27,6 @@ export const WalletContext = createContext<{
   connected: false,
 });
 
-// Hook to use wallet context
 export const useWalletContext = () => {
   const context = useContext(WalletContext);
   if (!context) {
@@ -53,7 +51,6 @@ export const WalletContextProvider: FC<Props> = ({ children }) => {
   );
 };
 
-// Wrapper component to provide wallet context
 const WalletContextWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   const wallet = useWallet();
 

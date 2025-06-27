@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/spl.json`.
  */
 export type Spl = {
-  "address": "56wPjm6jagU55tzjaR8KCm5JSvrayRtMvoPKNnmiNKuM",
+  "address": "39spdgoF9pMG7BRAA2Gnp6fPi8zNGZUBtq73kuNsonh7",
   "metadata": {
     "name": "spl",
     "version": "0.1.0",

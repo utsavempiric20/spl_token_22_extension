@@ -279,6 +279,7 @@
   outline: none;
   margin-bottom: 15px;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .slider::-webkit-slider-thumb {
@@ -327,6 +328,64 @@
   background: #eff6ff;
 }
 
+.quote-display {
+  margin-bottom: 24px;
+}
+
+.quote-display label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.quote-amount {
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.quote-loading {
+  color: #6b7280;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+.quote-value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.quote-value.success {
+  color: #059669;
+}
+
+.quote-value.error {
+  color: #dc2626;
+}
+
+.quote-placeholder {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+.amm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #9ca3af;
+}
+
+.amm-button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
 
 @media (max-width: 768px) {
   .amm-operations {
@@ -421,7 +480,6 @@
     transform: none;
   }
 }
-
 
 @media (prefers-contrast: high) {
   .amm-operations {
