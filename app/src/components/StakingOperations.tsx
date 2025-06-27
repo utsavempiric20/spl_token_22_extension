@@ -10,6 +10,7 @@ import type { Idl } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import { Navigation } from "./Navigation";
 
 import idl from "../idl/spl.json";
 import type { Spl } from "../idl/spl";
@@ -33,17 +34,20 @@ const USER_STAKE_SEED = "user_stake";
 export const StakingOperations: React.FC = () => {
   const { connection } = useConnection();
   const wallet = useWallet();
+  const [activeTab, setActiveTab] = useState<
+    "initialize" | "stake" | "admin" | "rewards"
+  >("initialize");
+  const [status, setStatus] = useState<string>("");
 
   const [stakeMint, setStakeMint] = useState("");
   const [rewardRatePerDay, setRewardRatePerDay] = useState<string>("0");
 
   const [stakeAmount, setStakeAmount] = useState("0");
   const [unstakeAmount, setUnstakeAmount] = useState("0");
+
   const [depositAmt, setDepositAmt] = useState("0");
   const [newRewardRate, setNewRewardRate] = useState("0");
   const [isPaused, setIsPaused] = useState(false);
-
-  const [status, setStatus] = useState<string>("");
 
   const getProvider = () => {
     if (!wallet.publicKey) throw new Error("Wallet not connected!");
@@ -414,273 +418,255 @@ export const StakingOperations: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex justify-between items-center bg-white rounded-xl shadow-sm p-4">
-          <h1 className="text-2xl font-bold text-slate-800">
-            Staking Operations
-          </h1>
-          <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-700 !rounded-lg !px-4 !py-2" />
+  const renderInitializeTab = () => (
+    <div className="staking-tab-content">
+      <div className="staking-card">
+        <h3>Initialize Staking Pool</h3>
+        <div className="staking-container">
+          <div className="staking-input-group">
+            <label>Stake Mint Address</label>
+            <input
+              type="text"
+              placeholder="Enter stake mint address"
+              value={stakeMint}
+              onChange={(e) => setStakeMint(e.target.value.trim())}
+            />
+          </div>
+
+          <div className="staking-input-group">
+            <label>Reward Rate Per Day</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={rewardRatePerDay}
+              onChange={(e) => setRewardRatePerDay(e.target.value)}
+            />
+          </div>
+
+          <button className="staking-button primary" onClick={initializePool}>
+            Initialize Pool
+          </button>
         </div>
-
-        {/* Status Message */}
-        {status && (
-          <div
-            className={`p-4 rounded-lg ${
-              status.includes("❌")
-                ? "bg-red-50 text-red-700"
-                : "bg-green-50 text-green-700"
-            }`}
-          >
-            <p className="text-sm font-medium">{status}</p>
-          </div>
-        )}
-
-        {wallet.publicKey ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Initialize Pool (admin) */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                Initialize Pool
-              </h2>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Reward rate per day (raw units)"
-                  type="number"
-                  value={rewardRatePerDay}
-                  onChange={(e) => setRewardRatePerDay(e.target.value)}
-                />
-                <button
-                  className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                  onClick={initializePool}
-                >
-                  Initialize Pool
-                </button>
-              </div>
-            </div>
-
-            {/* Pool Management (admin) */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                Pool Management
-              </h2>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                      isPaused
-                        ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                        : "bg-red-500 text-white hover:bg-red-600"
-                    }`}
-                    onClick={pausePool}
-                    disabled={isPaused}
-                  >
-                    Pause Pool
-                  </button>
-                  <button
-                    className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                      !isPaused
-                        ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                        : "bg-green-500 text-white hover:bg-green-600"
-                    }`}
-                    onClick={unpausePool}
-                    disabled={!isPaused}
-                  >
-                    Unpause Pool
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Stake */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                Stake Tokens
-              </h2>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Amount"
-                  type="number"
-                  value={stakeAmount}
-                  onChange={(e) => setStakeAmount(e.target.value)}
-                />
-                <button
-                  className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-                  onClick={stakeTokens}
-                >
-                  Stake
-                </button>
-              </div>
-            </div>
-
-            {/* Unstake */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-                Unstake Tokens
-              </h2>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Amount"
-                  type="number"
-                  value={unstakeAmount}
-                  onChange={(e) => setUnstakeAmount(e.target.value)}
-                />
-                <button
-                  className="w-full bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors font-medium"
-                  onClick={unstakeTokens}
-                >
-                  Unstake
-                </button>
-              </div>
-            </div>
-
-            {/* Deposit Rewards (admin) */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
-                Deposit Rewards
-              </h2>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Amount to deposit"
-                  type="number"
-                  value={depositAmt}
-                  onChange={(e) => setDepositAmt(e.target.value)}
-                />
-                <button
-                  className="w-full bg-cyan-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700 transition-colors font-medium"
-                  onClick={depositRewards}
-                >
-                  Deposit Rewards
-                </button>
-              </div>
-            </div>
-
-            {/* Set Reward Rate (admin) */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-violet-500 rounded-full"></span>
-                Set Reward Rate
-              </h2>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="New reward rate per day"
-                  type="number"
-                  value={newRewardRate}
-                  onChange={(e) => setNewRewardRate(e.target.value)}
-                />
-                <button
-                  className="w-full bg-violet-600 text-white py-2 px-4 rounded-lg hover:bg-violet-700 transition-colors font-medium"
-                  onClick={setRewardRate}
-                >
-                  Update Reward Rate
-                </button>
-              </div>
-            </div>
-
-            {/* Claim Rewards */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                Claim Rewards
-              </h2>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <button
-                  className="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors font-medium"
-                  onClick={claimRewards}
-                >
-                  Claim Rewards
-                </button>
-              </div>
-            </div>
-
-            {/* Emergency Withdraw */}
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-4 border-2 border-red-100">
-              <h2 className="text-lg font-semibold text-red-600 flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                Emergency Withdraw
-              </h2>
-              <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg">
-                Warning: This will withdraw all your staked tokens immediately
-                without rewards.
-              </p>
-              <div className="space-y-3">
-                <input
-                  className="w-full px-4 py-2 rounded-lg border border-red-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-colors"
-                  placeholder="Stake mint address"
-                  value={stakeMint}
-                  onChange={(e) => setStakeMint(e.target.value.trim())}
-                />
-                <button
-                  className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
-                  onClick={emergencyWithdraw}
-                >
-                  Emergency Withdraw
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-slate-600">
-              Please connect your wallet to continue.
-            </p>
-          </div>
-        )}
       </div>
     </div>
+  );
+
+  const renderStakeTab = () => (
+    <div className="staking-tab-content">
+      <div className="staking-card">
+        <h3>Stake & Unstake Tokens</h3>
+        <div className="staking-container">
+          <div className="staking-input-group">
+            <label>Stake Mint Address</label>
+            <input
+              type="text"
+              placeholder="Enter stake mint address"
+              value={stakeMint}
+              onChange={(e) => setStakeMint(e.target.value.trim())}
+            />
+          </div>
+
+          <div className="staking-input-group">
+            <label>Stake Amount</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={stakeAmount}
+              onChange={(e) => setStakeAmount(e.target.value)}
+            />
+          </div>
+
+          <button className="staking-button primary" onClick={stakeTokens}>
+            Stake Tokens
+          </button>
+
+          <div className="staking-input-group">
+            <label>Unstake Amount</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={unstakeAmount}
+              onChange={(e) => setUnstakeAmount(e.target.value)}
+            />
+          </div>
+
+          <button className="staking-button warning" onClick={unstakeTokens}>
+            Unstake Tokens
+          </button>
+
+          <button className="staking-button success" onClick={claimRewards}>
+            Claim Rewards
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAdminTab = () => (
+    <div className="staking-tab-content">
+      <div className="staking-card">
+        <h3>Pool Administration</h3>
+        <div className="staking-container">
+          <div className="staking-input-group">
+            <label>Stake Mint Address</label>
+            <input
+              type="text"
+              placeholder="Enter stake mint address"
+              value={stakeMint}
+              onChange={(e) => setStakeMint(e.target.value.trim())}
+            />
+          </div>
+
+          <div className="button-group">
+            <button
+              className={`staking-button ${isPaused ? "disabled" : "danger"}`}
+              onClick={pausePool}
+              disabled={isPaused}
+            >
+              Pause Pool
+            </button>
+            <button
+              className={`staking-button ${!isPaused ? "disabled" : "success"}`}
+              onClick={unpausePool}
+              disabled={!isPaused}
+            >
+              Unpause Pool
+            </button>
+          </div>
+
+          <div className="staking-input-group">
+            <label>Reward Rate Per Day</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={newRewardRate}
+              onChange={(e) => setNewRewardRate(e.target.value)}
+            />
+          </div>
+
+          <button className="staking-button secondary" onClick={setRewardRate}>
+            Update Reward Rate
+          </button>
+
+          <div className="staking-input-group">
+            <label>Deposit Amount</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={depositAmt}
+              onChange={(e) => setDepositAmt(e.target.value)}
+            />
+          </div>
+
+          <button className="staking-button info" onClick={depositRewards}>
+            Deposit Rewards
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderRewardsTab = () => (
+    <div className="staking-tab-content">
+      <div className="staking-card emergency">
+        <h3>Emergency Operations</h3>
+        <div className="staking-container">
+          <p className="warning-text">
+            Warning: Emergency withdrawal will withdraw all your staked tokens
+            immediately without rewards.
+          </p>
+
+          <div className="staking-input-group">
+            <label>Stake Mint Address</label>
+            <input
+              type="text"
+              placeholder="Enter stake mint address"
+              value={stakeMint}
+              onChange={(e) => setStakeMint(e.target.value.trim())}
+            />
+          </div>
+
+          <button className="staking-button danger" onClick={emergencyWithdraw}>
+            Emergency Withdraw
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="staking-operations">
+        <Navigation />
+        <div className="staking-header">
+          <h2>Staking & Rewards</h2>
+          <p>
+            Stake your tokens and earn rewards with our secure staking platform
+          </p>
+        </div>
+
+        <div className="staking-content">
+          <WalletMultiButton />
+
+          {status && (
+            <div
+              className={`status-message ${
+                status.includes("❌") ? "error" : "success"
+              }`}
+            >
+              {status}
+            </div>
+          )}
+
+          {wallet.publicKey ? (
+            <>
+              <div className="staking-tabs">
+                <button
+                  className={`staking-tab ${
+                    activeTab === "initialize" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("initialize")}
+                >
+                  🏗️ Initialize Pool
+                </button>
+                <button
+                  className={`staking-tab ${
+                    activeTab === "stake" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("stake")}
+                >
+                  🔒 Stake & Unstake
+                </button>
+                <button
+                  className={`staking-tab ${
+                    activeTab === "admin" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("admin")}
+                >
+                  ⚙️ Admin Panel
+                </button>
+                <button
+                  className={`staking-tab ${
+                    activeTab === "rewards" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("rewards")}
+                >
+                  🚨 Emergency
+                </button>
+              </div>
+
+              {activeTab === "initialize" && renderInitializeTab()}
+              {activeTab === "stake" && renderStakeTab()}
+              {activeTab === "admin" && renderAdminTab()}
+              {activeTab === "rewards" && renderRewardsTab()}
+            </>
+          ) : (
+            <div className="connect-wallet">
+              <p>Please connect your wallet to continue.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 };

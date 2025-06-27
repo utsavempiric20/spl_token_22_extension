@@ -1,4 +1,4 @@
-.token-operations {
+.staking-operations {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 100px 20px 40px;
@@ -6,27 +6,27 @@
     sans-serif;
 }
 
-.token-header {
+.staking-header {
   text-align: center;
   margin-bottom: 40px;
   color: white;
 }
 
-.token-header h2 {
+.staking-header h2 {
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 700;
   margin-bottom: 10px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.token-header p {
+.staking-header p {
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   opacity: 0.9;
   max-width: 600px;
   margin: 0 auto;
 }
 
-.token-content {
+.staking-content {
   max-width: 1200px;
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.95);
@@ -79,7 +79,7 @@
   border: 1px solid #dc2626;
 }
 
-.token-tabs {
+.staking-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -87,7 +87,7 @@
   justify-content: center;
 }
 
-.token-tab {
+.staking-tab {
   background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
   border: 2px solid transparent;
   border-radius: 12px;
@@ -102,20 +102,20 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.token-tab:hover {
+.staking-tab:hover {
   background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.token-tab.active {
+.staking-tab.active {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   border-color: #1d4ed8;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
-.token-tab-content {
+.staking-tab-content {
   animation: fadeIn 0.3s ease-in-out;
 }
 
@@ -130,7 +130,7 @@
   }
 }
 
-.token-card {
+.staking-card {
   background: white;
   border-radius: 16px;
   padding: 30px;
@@ -138,7 +138,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.token-card h3 {
+.staking-card h3 {
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
   color: #1e293b;
@@ -146,11 +146,11 @@
   text-align: center;
 }
 
-.token-input-group {
+.staking-input-group {
   margin-bottom: 20px;
 }
 
-.token-input-group label {
+.staking-input-group label {
   display: block;
   font-size: clamp(0.875rem, 2vw, 1rem);
   font-weight: 600;
@@ -159,7 +159,8 @@
   text-align: left;
 }
 
-.token-input-group input {
+.staking-input-group input,
+.staking-input-group select {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
@@ -171,18 +172,19 @@
   box-sizing: border-box;
 }
 
-.token-input-group input:focus {
+.staking-input-group input:focus,
+.staking-input-group select:focus {
   outline: none;
   border-color: #3b82f6;
   background: white;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.token-input-group input::placeholder {
+.staking-input-group input::placeholder {
   color: #9ca3af;
 }
 
-.token-button {
+.staking-button {
   width: 100%;
   padding: 14px 24px;
   border: none;
@@ -196,67 +198,67 @@
   letter-spacing: 0.5px;
 }
 
-.token-button.primary {
+.staking-button.primary {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.token-button.primary:hover {
+.staking-button.primary:hover {
   background: linear-gradient(135deg, #2563eb, #1e40af);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.token-button.success {
+.staking-button.success {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.token-button.success:hover {
+.staking-button.success:hover {
   background: linear-gradient(135deg, #059669, #047857);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
-.token-button.warning {
+.staking-button.warning {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: white;
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
-.token-button.warning:hover {
+.staking-button.warning:hover {
   background: linear-gradient(135deg, #d97706, #b45309);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
 }
 
-.token-button.danger {
+.staking-button.danger {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-.token-button.danger:hover {
+.staking-button.danger:hover {
   background: linear-gradient(135deg, #dc2626, #b91c1c);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
 }
 
-.token-button.info {
+.staking-button.info {
   background: linear-gradient(135deg, #06b6d4, #0891b2);
   color: white;
   box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
 }
 
-.token-button.info:hover {
+.staking-button.info:hover {
   background: linear-gradient(135deg, #0891b2, #0e7490);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
 }
 
-.token-button:disabled {
+.staking-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
@@ -269,13 +271,128 @@
   margin-top: 20px;
 }
 
-.button-group .token-button {
+.button-group .staking-button {
   margin-top: 0;
 }
 
-.token-container {
+.staking-container {
   max-width: 600px;
   margin: 0 auto;
+}
+
+.staking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.staking-pool-card {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.staking-pool-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+.staking-pool-card.emergency {
+  border: 2px solid #ef4444;
+  background: #fef2f2;
+}
+
+.pool-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.pool-name {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.pool-description {
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.pool-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.pool-stat {
+  text-align: center;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.pool-stat-label {
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  color: #64748b;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.pool-stat-value {
+  font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.pool-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pool-action-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 100px;
+}
+
+.pool-action-btn.primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.pool-action-btn.primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-2px);
+}
+
+.pool-action-btn.secondary {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.pool-action-btn.secondary:hover {
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
 }
 
 .connect-wallet {
@@ -294,74 +411,92 @@
   opacity: 0.9;
 }
 
+.warning-text {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 15px 20px;
+  border-radius: 10px;
+  border: 1px solid #fbbf24;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
-  .token-operations {
+  .staking-operations {
     padding: 90px 15px 30px;
   }
 
-  .token-content {
-    padding: 20px;
-    border-radius: 15px;
+  .staking-header {
+    padding: 1.5rem;
   }
 
-  .token-card {
-    padding: 20px;
-    border-radius: 12px;
+  .staking-header h2 {
+    font-size: 2rem;
   }
 
-  .token-tabs {
-    gap: 8px;
+  .staking-content {
+    padding: 1.5rem;
   }
 
-  .token-tab {
-    padding: 10px 16px;
-    min-width: 120px;
-    font-size: 0.875rem;
-  }
-
-  .token-input-group input {
-    padding: 10px 14px;
-  }
-
-  .token-button {
-    padding: 12px 20px;
+  .staking-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 
   .button-group {
     grid-template-columns: 1fr;
-    gap: 8px;
   }
 }
 
 @media (max-width: 480px) {
-  .token-operations {
+  .staking-operations {
     padding: 80px 10px 20px;
   }
 
-  .token-content {
-    padding: 15px;
+  .staking-header {
+    padding: 1rem;
   }
 
-  .token-card {
-    padding: 15px;
+  .staking-header h2 {
+    font-size: 1.75rem;
   }
 
-  .token-tabs {
+  .staking-content {
+    padding: 1rem;
+  }
+
+  .staking-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .staking-card {
+    padding: 1rem;
+  }
+
+  .button-group {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .staking-tabs {
     flex-direction: column;
     align-items: center;
   }
 
-  .token-tab {
+  .staking-tab {
     width: 100%;
     max-width: 200px;
   }
 
-  .token-input-group input {
+  .staking-input-group input,
+  .staking-input-group select {
     padding: 8px 12px;
     font-size: 0.875rem;
   }
 
-  .token-button {
+  .staking-button {
     padding: 10px 16px;
     font-size: 0.875rem;
   }
@@ -376,33 +511,38 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .token-tab,
-  .token-button,
-  .token-input-group input {
+  .staking-tab,
+  .staking-button,
+  .staking-input-group input,
+  .staking-input-group select,
+  .staking-pool-card {
     transition: none;
   }
 
-  .token-tab:hover,
-  .token-button:hover {
+  .staking-tab:hover,
+  .staking-button:hover,
+  .staking-pool-card:hover {
     transform: none;
   }
 }
 
 @media (prefers-contrast: high) {
-  .token-operations {
+  .staking-operations {
     background: #000;
   }
 
-  .token-content {
+  .staking-content {
     background: #fff;
     border: 2px solid #000;
   }
 
-  .token-card {
+  .staking-card,
+  .staking-pool-card {
     border: 2px solid #000;
   }
 
-  .token-input-group input {
+  .staking-input-group input,
+  .staking-input-group select {
     border: 2px solid #000;
     background: #fff;
   }

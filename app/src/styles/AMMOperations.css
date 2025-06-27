@@ -1,4 +1,4 @@
-.token-operations {
+.amm-operations {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 100px 20px 40px;
@@ -6,27 +6,27 @@
     sans-serif;
 }
 
-.token-header {
+.amm-header {
   text-align: center;
   margin-bottom: 40px;
   color: white;
 }
 
-.token-header h2 {
+.amm-header h2 {
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 700;
   margin-bottom: 10px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.token-header p {
+.amm-header p {
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   opacity: 0.9;
   max-width: 600px;
   margin: 0 auto;
 }
 
-.token-content {
+.amm-content {
   max-width: 1200px;
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.95);
@@ -34,27 +34,6 @@
   padding: 30px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
-}
-
-.wallet-adapter-button {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
-  border-radius: 12px !important;
-  padding: 12px 24px !important;
-  font-weight: 600 !important;
-  font-size: clamp(0.875rem, 2vw, 1rem) !important;
-  border: none !important;
-  color: white !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
-}
-
-.wallet-adapter-button:hover {
-  background: linear-gradient(135deg, #2563eb, #1e40af) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4) !important;
 }
 
 .status-message {
@@ -79,7 +58,7 @@
   border: 1px solid #dc2626;
 }
 
-.token-tabs {
+.amm-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -87,7 +66,7 @@
   justify-content: center;
 }
 
-.token-tab {
+.amm-tab {
   background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
   border: 2px solid transparent;
   border-radius: 12px;
@@ -102,20 +81,20 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.token-tab:hover {
+.amm-tab:hover {
   background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.token-tab.active {
+.amm-tab.active {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   border-color: #1d4ed8;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
-.token-tab-content {
+.amm-tab-content {
   animation: fadeIn 0.3s ease-in-out;
 }
 
@@ -130,7 +109,7 @@
   }
 }
 
-.token-card {
+.amm-card {
   background: white;
   border-radius: 16px;
   padding: 30px;
@@ -138,7 +117,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.token-card h3 {
+.amm-card h3 {
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
   color: #1e293b;
@@ -146,11 +125,13 @@
   text-align: center;
 }
 
-.token-input-group {
+.liquidity-input-group,
+.swap-input-group {
   margin-bottom: 20px;
 }
 
-.token-input-group label {
+.liquidity-input-group label,
+.swap-input-group label {
   display: block;
   font-size: clamp(0.875rem, 2vw, 1rem);
   font-weight: 600;
@@ -159,7 +140,8 @@
   text-align: left;
 }
 
-.token-input-group input {
+.liquidity-input-group input,
+.swap-input-group input {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
@@ -171,18 +153,20 @@
   box-sizing: border-box;
 }
 
-.token-input-group input:focus {
+.liquidity-input-group input:focus,
+.swap-input-group input:focus {
   outline: none;
   border-color: #3b82f6;
   background: white;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.token-input-group input::placeholder {
+.liquidity-input-group input::placeholder,
+.swap-input-group input::placeholder {
   color: #9ca3af;
 }
 
-.token-button {
+.amm-button {
   width: 100%;
   padding: 14px 24px;
   border: none;
@@ -196,213 +180,265 @@
   letter-spacing: 0.5px;
 }
 
-.token-button.primary {
+.amm-button.primary {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.token-button.primary:hover {
+.amm-button.primary:hover {
   background: linear-gradient(135deg, #2563eb, #1e40af);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.token-button.success {
+.amm-button.secondary {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.token-button.success:hover {
+.amm-button.secondary:hover {
   background: linear-gradient(135deg, #059669, #047857);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
-.token-button.warning {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-}
-
-.token-button.warning:hover {
-  background: linear-gradient(135deg, #d97706, #b45309);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-}
-
-.token-button.danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.token-button.danger:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-}
-
-.token-button.info {
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
-  color: white;
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
-}
-
-.token-button.info:hover {
-  background: linear-gradient(135deg, #0891b2, #0e7490);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
-}
-
-.token-button:disabled {
+.amm-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
 }
 
-.button-group {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.swap-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.swap-settings {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.swap-settings label {
+  display: block;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.slippage-input {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  margin-top: 20px;
 }
 
-.button-group .token-button {
-  margin-top: 0;
+.slippage-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
-.token-container {
+.slippage-input span {
+  font-weight: 600;
+  color: #374151;
+  min-width: 20px;
+}
+
+.liquidity-container {
   max-width: 600px;
   margin: 0 auto;
 }
 
-.connect-wallet {
-  text-align: center;
-  padding: 60px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.percentage-slider {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
 }
 
-.connect-wallet p {
-  font-size: clamp(1.125rem, 2.5vw, 1.375rem);
-  color: white;
-  margin-bottom: 30px;
-  opacity: 0.9;
+.percentage-slider label {
+  display: block;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 15px;
+  text-align: center;
 }
+
+.slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e5e7eb;
+  outline: none;
+  margin-bottom: 15px;
+  -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.percentage-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.percentage-buttons button {
+  padding: 8px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  color: #374151;
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.percentage-buttons button:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
 
 @media (max-width: 768px) {
-  .token-operations {
+  .amm-operations {
     padding: 90px 15px 30px;
   }
 
-  .token-content {
+  .amm-content {
     padding: 20px;
     border-radius: 15px;
   }
 
-  .token-card {
+  .amm-card {
     padding: 20px;
     border-radius: 12px;
   }
 
-  .token-tabs {
+  .amm-tabs {
     gap: 8px;
   }
 
-  .token-tab {
+  .amm-tab {
     padding: 10px 16px;
     min-width: 120px;
     font-size: 0.875rem;
   }
 
-  .token-input-group input {
+  .liquidity-input-group input,
+  .swap-input-group input {
     padding: 10px 14px;
   }
 
-  .token-button {
+  .amm-button {
     padding: 12px 20px;
   }
 
-  .button-group {
-    grid-template-columns: 1fr;
+  .percentage-buttons {
     gap: 8px;
+  }
+
+  .percentage-buttons button {
+    padding: 6px 12px;
+    font-size: 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
-  .token-operations {
+  .amm-operations {
     padding: 80px 10px 20px;
   }
 
-  .token-content {
+  .amm-content {
     padding: 15px;
   }
 
-  .token-card {
+  .amm-card {
     padding: 15px;
   }
 
-  .token-tabs {
+  .amm-tabs {
     flex-direction: column;
     align-items: center;
   }
 
-  .token-tab {
+  .amm-tab {
     width: 100%;
     max-width: 200px;
   }
 
-  .token-input-group input {
+  .liquidity-input-group input,
+  .swap-input-group input {
     padding: 8px 12px;
     font-size: 0.875rem;
   }
 
-  .token-button {
+  .amm-button {
     padding: 10px 16px;
     font-size: 0.875rem;
-  }
-
-  .connect-wallet {
-    padding: 40px 15px;
-  }
-
-  .connect-wallet p {
-    font-size: 1rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .token-tab,
-  .token-button,
-  .token-input-group input {
+  .amm-tab,
+  .amm-button,
+  .liquidity-input-group input,
+  .swap-input-group input,
+  .percentage-buttons button {
     transition: none;
   }
 
-  .token-tab:hover,
-  .token-button:hover {
+  .amm-tab:hover,
+  .amm-button:hover {
     transform: none;
   }
 }
 
+
 @media (prefers-contrast: high) {
-  .token-operations {
+  .amm-operations {
     background: #000;
   }
 
-  .token-content {
+  .amm-content {
     background: #fff;
     border: 2px solid #000;
   }
 
-  .token-card {
+  .amm-card {
     border: 2px solid #000;
   }
 
-  .token-input-group input {
+  .liquidity-input-group input,
+  .swap-input-group input {
     border: 2px solid #000;
     background: #fff;
   }

@@ -10,10 +10,10 @@ import type { Idl } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import { Navigation } from "./Navigation";
 import idl from "../idl/spl.json";
 import type { Spl } from "../idl/spl";
 
-// Helper function to derive associated token address
 function associatedAddress({
   mint,
   owner,
@@ -30,14 +30,22 @@ function associatedAddress({
 export const TokenOperations: FC = () => {
   const { connection } = useConnection();
   const wallet = useWallet();
+  const [activeTab, setActiveTab] = useState<
+    "create" | "mintBurn" | "accountManagement"
+  >("create");
+  const [status, setStatus] = useState("");
+
+
   const [tokenName, setTokenName] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState("");
   const [tokenUri, setTokenUri] = useState("");
   const [decimals, setDecimals] = useState("9");
-  const [amount, setAmount] = useState("");
+
+
   const [mintAddress, setMintAddress] = useState("");
+  const [amount, setAmount] = useState("");
+
   const [targetAddress, setTargetAddress] = useState("");
-  const [status, setStatus] = useState("");
 
   const getProvider = () => {
     if (!wallet.publicKey) throw new Error("Wallet not connected!");
@@ -269,81 +277,201 @@ export const TokenOperations: FC = () => {
     }
   };
 
-  return (
-    <div className="token-operations">
-      <WalletMultiButton />
-
-      {status && <div className="status-message">{status}</div>}
-
-      {wallet.publicKey ? (
-        <div className="operations">
-          <div className="section">
-            <h2>Create Token</h2>
+  const renderCreateTab = () => (
+    <div className="token-tab-content">
+      <div className="token-card">
+        <h3>Create New Token</h3>
+        <div className="token-container">
+          <div className="token-input-group">
+            <label>Token Name</label>
             <input
               type="text"
-              placeholder="Token Name"
+              placeholder="e.g., My Token"
               value={tokenName}
               onChange={(e) => setTokenName(e.target.value)}
             />
+          </div>
+
+          <div className="token-input-group">
+            <label>Token Symbol</label>
             <input
               type="text"
-              placeholder="Token Symbol"
+              placeholder="e.g., MTK"
               value={tokenSymbol}
               onChange={(e) => setTokenSymbol(e.target.value)}
             />
+          </div>
+
+          <div className="token-input-group">
+            <label>Token URI</label>
             <input
               type="text"
-              placeholder="Token URI"
+              placeholder="https://example.com/metadata.json"
               value={tokenUri}
               onChange={(e) => setTokenUri(e.target.value)}
             />
-            <input
-              type="number"
-              placeholder="Decimals"
-              value={decimals}
-              onChange={(e) => setDecimals(e.target.value)}
-            />
-            <button onClick={createToken}>Create Token</button>
           </div>
 
-          <div className="section">
-            <h2>Token Operations</h2>
+          <div className="token-input-group">
+            <label>Decimals</label>
+            <input
+              type="number"
+              placeholder="9"
+              value={decimals}
+              onChange={(e) => setDecimals(e.target.value)}
+              min="0"
+              max="9"
+            />
+          </div>
+
+          <button className="token-button primary" onClick={createToken}>
+            Create Token
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderMintBurnTab = () => (
+    <div className="token-tab-content">
+      <div className="token-card">
+        <h3>Mint & Burn Tokens</h3>
+        <div className="token-container">
+          <div className="token-input-group">
+            <label>Mint Address</label>
             <input
               type="text"
-              placeholder="Mint Address"
+              placeholder="Enter mint address"
               value={mintAddress}
               onChange={(e) => setMintAddress(e.target.value)}
             />
-            <input
-              type="number"
-              placeholder="Amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <div className="button-group">
-              <button onClick={mintTokens}>Mint</button>
-              <button onClick={burnTokens}>Burn</button>
-            </div>
           </div>
 
-          <div className="section">
-            <h2>Account Management</h2>
+          <div className="token-input-group">
+            <label>Amount</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              step="1"
+            />
+          </div>
+
+          <div className="button-group">
+            <button className="token-button success" onClick={mintTokens}>
+              Mint Tokens
+            </button>
+            <button className="token-button danger" onClick={burnTokens}>
+              Burn Tokens
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAccountManagementTab = () => (
+    <div className="token-tab-content">
+      <div className="token-card">
+        <h3>Account Management</h3>
+        <div className="token-container">
+          <div className="token-input-group">
+            <label>Mint Address</label>
             <input
               type="text"
-              placeholder="Target Token Account Address"
+              placeholder="Enter mint address"
+              value={mintAddress}
+              onChange={(e) => setMintAddress(e.target.value)}
+            />
+          </div>
+
+          <div className="token-input-group">
+            <label>Target Token Account Address</label>
+            <input
+              type="text"
+              placeholder="Enter target account address"
               value={targetAddress}
               onChange={(e) => setTargetAddress(e.target.value)}
             />
-            <div className="button-group">
-              <button onClick={freezeAccount}>Freeze</button>
-              <button onClick={thawAccount}>Thaw</button>
-              <button onClick={closeAccount}>Close</button>
-            </div>
+          </div>
+
+          <div className="button-group">
+            <button className="token-button warning" onClick={freezeAccount}>
+              Freeze Account
+            </button>
+            <button className="token-button info" onClick={thawAccount}>
+              Thaw Account
+            </button>
+            <button className="token-button danger" onClick={closeAccount}>
+              Close Account
+            </button>
           </div>
         </div>
-      ) : (
-        <p>Please connect your wallet to continue</p>
-      )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="token-operations">
+      <Navigation />
+      <div className="token-header">
+        <h2>SPL Token Management</h2>
+        <p>Create, mint, burn, and manage your SPL tokens</p>
+      </div>
+
+      <div className="token-content">
+        <WalletMultiButton />
+
+        {status && (
+          <div
+            className={`status-message ${
+              status.includes("❌") ? "error" : "success"
+            }`}
+          >
+            <p>{status}</p>
+          </div>
+        )}
+
+        {wallet.publicKey ? (
+          <>
+            <div className="token-tabs">
+              <button
+                className={`token-tab ${
+                  activeTab === "create" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("create")}
+              >
+                🏗️ Create Token
+              </button>
+              <button
+                className={`token-tab ${
+                  activeTab === "mintBurn" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("mintBurn")}
+              >
+                🪙 Mint & Burn
+              </button>
+              <button
+                className={`token-tab ${
+                  activeTab === "accountManagement" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("accountManagement")}
+              >
+                ⚙️ Account Management
+              </button>
+            </div>
+
+            {activeTab === "create" && renderCreateTab()}
+            {activeTab === "mintBurn" && renderMintBurnTab()}
+            {activeTab === "accountManagement" && renderAccountManagementTab()}
+          </>
+        ) : (
+          <div className="connect-wallet">
+            <p>Please connect your wallet to continue</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
