@@ -711,41 +711,51 @@ export const AMMOperations: React.FC = () => {
           </div>
         )}
 
-        <div className="amm-tabs">
-          <button
-            className={`amm-tab ${activeTab === "initialize" ? "active" : ""}`}
-            onClick={() => setActiveTab("initialize")}
-          >
-            🏗️ Initialize Pool
-          </button>
-          <button
-            className={`amm-tab ${activeTab === "swap" ? "active" : ""}`}
-            onClick={() => setActiveTab("swap")}
-          >
-            💱 Swap
-          </button>
-          <button
-            className={`amm-tab ${
-              activeTab === "addLiquidity" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("addLiquidity")}
-          >
-            ➕ Add Liquidity
-          </button>
-          <button
-            className={`amm-tab ${
-              activeTab === "removeLiquidity" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("removeLiquidity")}
-          >
-            ➖ Remove Liquidity
-          </button>
-        </div>
+        {solanaWallet.publicKey ? (
+          <>
+            <div className="amm-tabs">
+              <button
+                className={`amm-tab ${
+                  activeTab === "initialize" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("initialize")}
+              >
+                🏗️ Initialize Pool
+              </button>
+              <button
+                className={`amm-tab ${activeTab === "swap" ? "active" : ""}`}
+                onClick={() => setActiveTab("swap")}
+              >
+                💱 Swap
+              </button>
+              <button
+                className={`amm-tab ${
+                  activeTab === "addLiquidity" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("addLiquidity")}
+              >
+                ➕ Add Liquidity
+              </button>
+              <button
+                className={`amm-tab ${
+                  activeTab === "removeLiquidity" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("removeLiquidity")}
+              >
+                ➖ Remove Liquidity
+              </button>
+            </div>
 
-        {activeTab === "initialize" && renderInitializeTab()}
-        {activeTab === "swap" && renderSwapTab()}
-        {activeTab === "addLiquidity" && renderAddLiquidityTab()}
-        {activeTab === "removeLiquidity" && renderRemoveLiquidityTab()}
+            {activeTab === "initialize" && renderInitializeTab()}
+            {activeTab === "swap" && renderSwapTab()}
+            {activeTab === "addLiquidity" && renderAddLiquidityTab()}
+            {activeTab === "removeLiquidity" && renderRemoveLiquidityTab()}
+          </>
+        ) : (
+          <div className="connect-wallet">
+            <p>Please connect your wallet to continue.</p>
+          </div>
+        )}
       </div>
     </div>
   );

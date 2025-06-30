@@ -406,7 +406,7 @@
 
 .connect-wallet p {
   font-size: clamp(1.125rem, 2.5vw, 1.375rem);
-  color: white;
+  color: #000;
   margin-bottom: 30px;
   opacity: 0.9;
 }
