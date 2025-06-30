@@ -24,11 +24,9 @@ pub struct StakingPool {
     /// Total amount of stake tokens currently staked.
     pub total_staked: u128,
 
-    /// Reward rate per second, scaled by 1e12 (to allow fractional).
-    /// E.g. if you want to pay out 1 token per second, store 1_000_000_000_000.
+    /// Reward rate
     pub reward_rate_per_day: u128,
 
-    /// Accumulated reward per staked token, scaled by 1e12.
     /// Updated on each stake/unstake/claim.
     pub reward_per_token_stored: u128,
 

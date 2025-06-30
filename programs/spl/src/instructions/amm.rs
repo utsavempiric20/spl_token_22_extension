@@ -241,12 +241,26 @@ pub fn calculate_quote_amount(
 
 pub fn quote(ctx: Context<Quote>, amount_in: u128) -> Result<u128> {
     let pool = &ctx.accounts.pool;
-    let swap_out_amount = calculate_quote_amount(
-        pool.reserve_a,
-        pool.reserve_b,
-        amount_in,
-        pool.fee_bps
-    )?;
+    let token_in = ctx.accounts.token_in_mint.key();
+    let token_out = ctx.accounts.token_out_mint.key();
+    let mut swap_out_amount = 0;
+    if token_in == pool.token_a_mint && token_out == pool.token_b_mint {
+        swap_out_amount = calculate_quote_amount(
+            pool.reserve_a,
+            pool.reserve_b,
+            amount_in,
+            pool.fee_bps
+        )?;
+    } else if token_in == pool.token_b_mint && token_out == pool.token_a_mint {
+        swap_out_amount = calculate_quote_amount(
+            pool.reserve_b,
+            pool.reserve_a,
+            amount_in,
+            pool.fee_bps
+        )?;
+    } else {
+        Err(AmmError::InvalidMint)?;
+    }
     Ok(swap_out_amount)
 }
 
@@ -254,7 +268,6 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let tp = ctx.accounts.token_program.to_account_info();
 
-    // copy reserves into locals
     let (
         vault_in,
         vault_out,
@@ -478,6 +491,8 @@ pub struct Swap<'info> {
 #[derive(Accounts)]
 pub struct Quote<'info> {
     pub pool: Account<'info, LiquidityPoolAMM>,
+    pub token_in_mint: InterfaceAccount<'info, Mint>,
+    pub token_out_mint: InterfaceAccount<'info, Mint>,
 }
 
 #[event]
@@ -528,4 +543,6 @@ pub enum AmmError {
     EmptyPool,
     #[msg("slippage tolerance exceeded")]
     SlippageExceeded,
+    #[msg("invalid mint address in pool")]
+    InvalidMint,
 }

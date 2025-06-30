@@ -13,7 +13,7 @@ import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { Navigation } from "./Navigation";
 
 import idl from "../idl/spl.json";
-import type { Spl } from "../idl/spl";
+import type { Spl } from "../idl/spl.ts";
 
 function associatedAddress({
   mint,

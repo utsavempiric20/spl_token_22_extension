@@ -17,7 +17,7 @@ import chai, { expect } from "chai";
 import chaiBn from "chai-bn";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
-import { Spl } from "../app/idl/spl";
+import { Spl } from "../target/types/spl";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 chai.use(chaiBn(BN));
@@ -294,7 +294,6 @@ describe("Amm_Program", () => {
         lpMint: lpMint,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_ID,
-        associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
       .signers([payer])
@@ -390,6 +389,8 @@ describe("Amm_Program", () => {
       .quoteAmm(amount_to_swap)
       .accountsStrict({
         pool: poolPda,
+        tokenInMint: mintA,
+        tokenOutMint: mintB,
       })
       .view();
 
@@ -477,7 +478,6 @@ describe("Amm_Program", () => {
         lpMint: lpMint,
         userLpMintAccount: userLp,
         tokenProgram: TOKEN_2022_ID,
-        associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
       })
       .rpc();
 

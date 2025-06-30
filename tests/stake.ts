@@ -11,7 +11,7 @@ import chai, { expect } from "chai";
 import chaiBn from "chai-bn";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
-import { Spl } from "../app/idl/spl";
+import { Spl } from "../target/types/spl";
 
 chai.use(chaiBn(BN));
 
@@ -77,8 +77,7 @@ describe("staking_program", () => {
     );
   });
 
-  /* -------------------------------------------------------------- */
-  it("1.init pool (10 tokens/sec) & deposit rewards", async () => {
+  it("1.init pool  & deposit rewards", async () => {
     const mintInfo = await getMint(
       provider.connection,
       mintPda,
@@ -88,7 +87,7 @@ describe("staking_program", () => {
     expect(mintInfo.mintAuthority!.equals(payer.publicKey)).to.be.true;
 
     await program.methods
-      .initializePoolStake(new BN(864_000)) // dummy 100/day, value overwritten below
+      .initializePoolStake(new BN(864_000))
       .accountsStrict({
         admin: payer.publicKey,
         stakeMint: mintPda,
@@ -104,9 +103,8 @@ describe("staking_program", () => {
       .signers([payer])
       .rpc();
 
-    /* bump to 10 tokens / second so only a short wait needed */
     await program.methods
-      .setRewardRateStake(new BN(864_000 /* ⇢ 10/sec */))
+      .setRewardRateStake(new BN(864_000))
       .accountsStrict({
         admin: payer.publicKey,
         pool: poolPda,

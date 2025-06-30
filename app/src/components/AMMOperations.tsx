@@ -22,7 +22,7 @@ import {
 } from "@solana/spl-token";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import idl from "../idl/spl.json";
-import type { Spl } from "../idl/spl";
+import type { Spl } from "../idl/spl.ts";
 import "../styles/AMMOperations.css";
 
 function associatedAddress({
@@ -138,6 +138,8 @@ export const AMMOperations: React.FC = () => {
         .quoteAmm(amountIn)
         .accountsStrict({
           pool: poolPk,
+          tokenInMint: tokenAMint,
+          tokenOutMint: tokenBMint,
         })
         .view();
 

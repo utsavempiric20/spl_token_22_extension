@@ -12,7 +12,7 @@ import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { Navigation } from "./Navigation";
 import idl from "../idl/spl.json";
-import type { Spl } from "../idl/spl";
+import type { Spl } from "../idl/spl.ts";
 
 function associatedAddress({
   mint,
@@ -35,12 +35,10 @@ export const TokenOperations: FC = () => {
   >("create");
   const [status, setStatus] = useState("");
 
-
   const [tokenName, setTokenName] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState("");
   const [tokenUri, setTokenUri] = useState("");
   const [decimals, setDecimals] = useState("9");
-
 
   const [mintAddress, setMintAddress] = useState("");
   const [amount, setAmount] = useState("");
