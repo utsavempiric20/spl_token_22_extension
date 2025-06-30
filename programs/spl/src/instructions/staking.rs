@@ -485,7 +485,7 @@ pub struct Stake<'info> {
     #[account(mut)]
     pub user_stake_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// The user's pdas where we1000700000000030 track their stake data
+    /// The user's pdas where track their stake data
     #[account(
         init_if_needed,
         payer = staker,
