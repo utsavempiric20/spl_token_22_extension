@@ -226,7 +226,6 @@ export const StakingOperations: React.FC = () => {
       const provider = getProvider();
       const program = getProgram(provider);
       const stakeMintPk = new PublicKey(stakeMint);
-      console.log("stakeMintPk : ", stakeMintPk.toBase58());
 
       const poolPda = derivePoolPda(stakeMintPk);
       const userStakePda = deriveUserStakePda(poolPda, wallet.publicKey);
@@ -406,7 +405,6 @@ export const StakingOperations: React.FC = () => {
       const stakeMintPk = new PublicKey(stakeMint);
 
       const poolPda = derivePoolPda(stakeMintPk);
-      console.log(rate);
 
       const tx = await program.methods
         .setRewardRateStake(new BN(rate))

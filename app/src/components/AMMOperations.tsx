@@ -69,8 +69,8 @@ async function ensureAta(
     );
 
     const tx = new Transaction().add(ix);
-    const sig = await provider.sendAndConfirm(tx);
-    console.log("created ata", ata.toBase58(), sig);
+    await provider.sendAndConfirm(tx);
+
     return ata;
   }
 }
@@ -133,8 +133,6 @@ export const AMMOperations: React.FC = () => {
       const program = getProgram(provider);
       const poolPk = new PublicKey(poolAddress);
       const amountIn = new BN(parseFloat(swapAmount) * 10 ** 9);
-      console.log("swapTokenIn : ", swapTokenIn);
-      console.log("swapTokenOut : ", swapTokenOut);
 
       const amountOut = await program.methods
         .quoteAmm(amountIn)
@@ -185,9 +183,6 @@ export const AMMOperations: React.FC = () => {
 
       const vaultA = await ensureAta(provider, tokenAMintPk, poolPda);
       const vaultB = await ensureAta(provider, tokenBMintPk, poolPda);
-
-      console.log("vaultA", vaultA.toBase58());
-      console.log("vaultB", vaultB.toBase58());
 
       const [lpMint] = PublicKey.findProgramAddressSync(
         [Buffer.from("lp_mint"), poolPda.toBuffer()],
@@ -253,24 +248,18 @@ export const AMMOperations: React.FC = () => {
         mint: tokenOutPk,
         owner: poolPk,
       });
-      console.log("vaultIn : ", vaultIn.toBase58());
-      console.log("vaultOut : ", vaultOut.toBase58());
 
       const userIn = await ensureAta(
         provider,
         tokenInPk,
         solanaWallet.publicKey
       );
-      console.log("tokenInPk : ", tokenInPk.toBase58());
-      console.log("tokenOutPk : ", tokenOutPk.toBase58());
-      console.log("userIn : ", userIn.toBase58());
 
       const userOut = await ensureAta(
         provider,
         tokenOutPk,
         solanaWallet.publicKey
       );
-      console.log("userOut : ", userOut.toBase58());
 
       const tx = await program.methods
         .swapAmm(amountIn, amountOut)

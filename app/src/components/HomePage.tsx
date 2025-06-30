@@ -78,7 +78,6 @@ export const HomePage: React.FC = () => {
             <div className="feature-highlights">
               <span className="highlight">Create Tokens</span>
               <span className="highlight">Mint & Burn</span>
-              <span className="highlight">Transfer</span>
             </div>
             <button className="feature-button">Get Started →</button>
           </div>
