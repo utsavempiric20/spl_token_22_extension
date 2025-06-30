@@ -431,7 +431,7 @@ export const TokenOperations: FC = () => {
           </div>
         )}
 
-        {wallet.publicKey ? (
+      
           <>
             <div className="token-tabs">
               <button
@@ -464,11 +464,7 @@ export const TokenOperations: FC = () => {
             {activeTab === "mintBurn" && renderMintBurnTab()}
             {activeTab === "accountManagement" && renderAccountManagementTab()}
           </>
-        ) : (
-          <div className="connect-wallet">
-            <p>Please connect your wallet to continue</p>
-          </div>
-        )}
+       
       </div>
     </div>
   );

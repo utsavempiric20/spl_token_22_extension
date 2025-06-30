@@ -711,7 +711,7 @@ export const AMMOperations: React.FC = () => {
           </div>
         )}
 
-        {solanaWallet.publicKey ? (
+
           <>
             <div className="amm-tabs">
               <button
@@ -751,11 +751,7 @@ export const AMMOperations: React.FC = () => {
             {activeTab === "addLiquidity" && renderAddLiquidityTab()}
             {activeTab === "removeLiquidity" && renderRemoveLiquidityTab()}
           </>
-        ) : (
-          <div className="connect-wallet">
-            <p>Please connect your wallet to continue.</p>
-          </div>
-        )}
+       
       </div>
     </div>
   );

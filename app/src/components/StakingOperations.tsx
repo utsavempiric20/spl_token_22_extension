@@ -623,7 +623,7 @@ export const StakingOperations: React.FC = () => {
             </div>
           )}
 
-          {wallet.publicKey ? (
+        
             <>
               <div className="staking-tabs">
                 <button
@@ -665,11 +665,7 @@ export const StakingOperations: React.FC = () => {
               {activeTab === "admin" && renderAdminTab()}
               {activeTab === "rewards" && renderRewardsTab()}
             </>
-          ) : (
-            <div className="connect-wallet">
-              <p>Please connect your wallet to continue.</p>
-            </div>
-          )}
+         
         </div>
       </div>
     </>
