@@ -7,6 +7,7 @@ use anchor_spl::{
 };
 use std::mem::size_of;
 
+// Initialize a new liquidity pool with two tokens
 pub fn initialize_liquidity_pool(
     ctx: Context<LiquidityPool>,
     pool_name: String,
@@ -35,8 +36,10 @@ pub fn initialize_liquidity_pool(
     Ok(())
 }
 
+// Fee denominator (10000 = 100%)
 pub const FEE_DENOM: u128 = 10_000;
 
+// Add liquidity to the pool
 pub fn add_liquidity(
     ctx: Context<AddLiquidity>,
     amount_a_desired: u64,
@@ -49,6 +52,7 @@ pub fn add_liquidity(
     let reserve_a: u128 = vault_a.amount.into();
     let reserve_b: u128 = vault_b.amount.into();
 
+    // Calculate optimal amount of token B
     let amount_b_optimal: u64 = if reserve_a == 0 && reserve_b == 0 {
         max_amount_b
     } else {
@@ -62,6 +66,7 @@ pub fn add_liquidity(
     let tp = ctx.accounts.token_program.to_account_info();
     let depositor = ctx.accounts.depositor.to_account_info();
 
+    // Transfer token A from user to vault
     transfer_checked(
         CpiContext::new(tp.clone(), TransferChecked {
             from: ctx.accounts.user_token_a_account.to_account_info(),
@@ -73,6 +78,7 @@ pub fn add_liquidity(
         ctx.accounts.token_a_mint.decimals
     )?;
 
+    // Transfer token B from user to vault
     transfer_checked(
         CpiContext::new(tp.clone(), TransferChecked {
             from: ctx.accounts.user_token_b_account.to_account_info(),
@@ -84,6 +90,7 @@ pub fn add_liquidity(
         ctx.accounts.token_b_mint.decimals
     )?;
 
+    // Calculate LP tokens to mint
     let lp_supply: u128 = ctx.accounts.lp_mint.supply.into();
     let lp_to_mint = if lp_supply == 0 {
         isqrt((amount_a_desired as u128) * (amount_b_optimal as u128))
@@ -93,6 +100,7 @@ pub fn add_liquidity(
         part_a.min(part_b) as u64
     };
 
+    // Mint LP tokens to user
     let seeds: &[&[u8]] = &[
         LIQUIDITY_POOL_SEED,
         pool.token_a_mint.as_ref(),
@@ -115,6 +123,7 @@ pub fn add_liquidity(
         lp_to_mint
     )?;
 
+    // Update pool reserves
     pool.reserve_a = reserve_a + (amount_a_desired as u128);
     pool.reserve_b = reserve_b + (amount_b_optimal as u128);
     pool.total_lp_supply = lp_supply + (lp_to_mint as u128);
@@ -129,6 +138,7 @@ pub fn add_liquidity(
     Ok(())
 }
 
+// Remove liquidity from the pool
 pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let vault_a = &ctx.accounts.vault_a;
@@ -137,6 +147,7 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
     let lp_supply: u128 = ctx.accounts.lp_mint.supply.into();
     require!(lp_amount > 0 && (lp_amount as u128) <= lp_supply, AmmError::InvalidLp);
 
+    // Calculate amounts to return
     let amount_a = checked_mul(lp_amount as u128, pool.reserve_a)? / lp_supply;
     let amount_b = checked_mul(lp_amount as u128, pool.reserve_b)? / lp_supply;
     msg!("pool.reserve_a : {:?}", pool.reserve_a);
@@ -153,6 +164,7 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
         ctx.accounts.user_token_b_account.amount.to_string()
     );
 
+    // Burn LP tokens
     burn(
         CpiContext::new(ctx.accounts.token_program.to_account_info(), Burn {
             mint: ctx.accounts.lp_mint.to_account_info(),
@@ -173,7 +185,7 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
     let signer_seeds: &[&[&[u8]]] = &[seeds];
     let tp = ctx.accounts.token_program.to_account_info();
 
-    // A
+    // Transfer token A from vault to user
     transfer_checked(
         CpiContext::new_with_signer(
             tp.clone(),
@@ -188,7 +200,7 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
         amount_a as u64,
         ctx.accounts.token_a_mint.decimals
     )?;
-    // B
+    // Transfer token B from vault to user
     transfer_checked(
         CpiContext::new_with_signer(
             tp,
@@ -211,6 +223,7 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
         "user_token_b_account before : {:?}",
         ctx.accounts.user_token_b_account.amount.to_string()
     );
+    // Update pool reserves
     pool.reserve_a -= amount_a;
     pool.reserve_b -= amount_b;
     pool.total_lp_supply = lp_supply - (lp_amount as u128);
@@ -225,6 +238,7 @@ pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount: u64) -> Result
     Ok(())
 }
 
+// Calculate swap output amount using constant product formula
 pub fn calculate_quote_amount(
     reserve_in: u128,
     reserve_out: u128,
@@ -239,6 +253,7 @@ pub fn calculate_quote_amount(
     Ok(amount_out)
 }
 
+// Get quote for swap amount
 pub fn quote(ctx: Context<Quote>, amount_in: u128) -> Result<u128> {
     let pool = &ctx.accounts.pool;
     let token_in = ctx.accounts.token_in_mint.key();
@@ -264,10 +279,12 @@ pub fn quote(ctx: Context<Quote>, amount_in: u128) -> Result<u128> {
     Ok(swap_out_amount)
 }
 
+// Execute token swap
 pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let tp = ctx.accounts.token_program.to_account_info();
 
+    // Determine swap direction and setup variables
     let (
         vault_in,
         vault_out,
@@ -309,7 +326,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
 
     require!(reserve_in > 0 && reserve_out > 0, AmmError::EmptyPool);
 
-    // Compute swap
+    // Compute swap using constant product formula
     let fee_bps = pool.fee_bps as u128;
     let amount_in_u128 = amount_in as u128;
     let after_fee = checked_mul(amount_in_u128, FEE_DENOM - fee_bps)? / FEE_DENOM;
@@ -319,7 +336,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
     let amount_out = (reserve_out - new_out) as u64;
     require!(amount_out >= min_out, AmmError::SlippageExceeded);
 
-    // Perform token transfers (user→vault_in, vault_out→user)
+    // Transfer tokens from user to vault
     anchor_spl::token_2022::transfer_checked(
         CpiContext::new(tp.clone(), TransferChecked {
             from: user_in.to_account_info(),
@@ -331,6 +348,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
         dec_in
     )?;
 
+    // Transfer tokens from vault to user
     let seeds: &[&[u8]] = &[
         LIQUIDITY_POOL_SEED,
         pool.token_a_mint.as_ref(),
@@ -352,7 +370,7 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
         dec_out
     )?;
 
-    // Now write the new reserves back into pool
+    // Update pool reserves
     if vault_in.key() == pool.vault_a {
         pool.reserve_a = new_in;
         pool.reserve_b = new_out;
@@ -371,13 +389,16 @@ pub fn swap(ctx: Context<Swap>, amount_in: u64, min_out: u64) -> Result<()> {
     Ok(())
 }
 
+// Safe multiplication with overflow check
 fn checked_mul(a: u128, b: u128) -> Result<u128> {
     a.checked_mul(b).ok_or(AmmError::MathOverflow.into())
 }
+// Safe division with overflow check
 fn checked_div(a: u128, b: u128) -> Result<u128> {
     a.checked_div(b).ok_or(AmmError::MathOverflow.into())
 }
 
+// Integer square root function
 fn isqrt(n: u128) -> u64 {
     (n as f64).sqrt() as u64
 }

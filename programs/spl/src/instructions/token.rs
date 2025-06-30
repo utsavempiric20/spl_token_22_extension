@@ -26,6 +26,7 @@ use anchor_spl::{
 use crate::utils::*;
 
 /// SPL TOKEN FUNCTIONS
+// Create a new token mint with metadata
 pub fn handler(
     ctx: Context<CreateMintAccount>,
     _decimals: u8,
@@ -36,6 +37,7 @@ pub fn handler(
     ctx.accounts.initialize_token_metadata(name, symbol, uri)?;
     ctx.accounts.mint.reload()?;
 
+    // Update account lamports to minimum balance
     update_account_lamports_to_minimum_balance(
         ctx.accounts.mint.to_account_info(),
         ctx.accounts.payer.to_account_info(),
@@ -45,6 +47,7 @@ pub fn handler(
     Ok(())
 }
 
+// Mint new tokens to a specified account
 pub fn mint_spl_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(),
@@ -56,7 +59,7 @@ pub fn mint_spl_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     Ok(())
 }
 
-/// Burn `amount` tokens from `from`.
+// Burn tokens from a specified account
 pub fn burn_spl_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
     let cpi_accounts = Burn {
         mint: ctx.accounts.mint.to_account_info(),
@@ -68,7 +71,7 @@ pub fn burn_spl_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
     Ok(())
 }
 
-/// Close `account`, sending its lamports to `destination`.
+// Close a token account and reclaim rent
 pub fn close_spl_token_account(ctx: Context<CloseTokenAccount>) -> Result<()> {
     let cpi_accounts = CloseAccount {
         account: ctx.accounts.account.to_account_info(),
@@ -80,7 +83,7 @@ pub fn close_spl_token_account(ctx: Context<CloseTokenAccount>) -> Result<()> {
     Ok(())
 }
 
-/// Freeze `account` (preventing transfers/burns) under `mint`.
+// Freeze a token account (prevent transfers)
 pub fn freeze_spl_token_account(ctx: Context<FreezeTokenAccount>) -> Result<()> {
     let cpi_accounts = FreezeAccount {
         account: ctx.accounts.account.to_account_info(),
@@ -92,7 +95,7 @@ pub fn freeze_spl_token_account(ctx: Context<FreezeTokenAccount>) -> Result<()> 
     Ok(())
 }
 
-/// Thaw (unfreeze) `account` under `mint`.
+// Thaw (unfreeze) a token account
 pub fn thaw_spl_token_account(ctx: Context<ThawTokenAccount>) -> Result<()> {
     let cpi_accounts = ThawAccount {
         account: ctx.accounts.account.to_account_info(),
@@ -104,6 +107,7 @@ pub fn thaw_spl_token_account(ctx: Context<ThawTokenAccount>) -> Result<()> {
     Ok(())
 }
 
+// Initialize token metadata for a mint
 impl<'info> CreateMintAccount<'info> {
     fn initialize_token_metadata(&self, name: String, symbol: String, uri: String) -> Result<()> {
         let cpi_accounts = TokenMetadataInitialize {

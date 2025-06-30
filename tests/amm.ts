@@ -27,14 +27,18 @@ anchor.setProvider(provider);
 
 const program = anchor.workspace.Spl as Program<Spl>;
 const payer = (provider.wallet as NodeWallet).payer;
+// Token-2022 program ID
 const TOKEN_2022_ID = new PublicKey(
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 );
 
+// Seeds for PDAs
 const LIQUIDITY_POOL = Buffer.from("liquidity_pool");
 const MINT_SEEDS = Buffer.from("mint");
+// Precision for token amounts (9 decimals)
 const PRECISION = new BN(10).pow(new BN(9));
 
+// Helper function to get token account balance
 const bal = async (pk: PublicKey) =>
   new BN(
     (
@@ -42,6 +46,7 @@ const bal = async (pk: PublicKey) =>
     ).amount.toString()
   );
 
+// Helper function to get extra metas PDA
 const extraPda = (mint: PublicKey) =>
   PublicKey.findProgramAddressSync(
     [Buffer.from("extra-account-metas"), mint.toBuffer()],
@@ -63,12 +68,14 @@ let mintA: PublicKey,
   payerBata: PublicKey;
 const other = Keypair.generate();
 
+// Token A configuration
 let decimals_0 = 9;
 let TOKEN_NAME_0 = "Pengu B Coin";
 let TOKEN_SYMBOL_0 = "PBC";
 let METADATA_URI_0 =
   "https://amethyst-abstract-toad-183.mypinata.cloud/ipfs/bafkreihlci7e65qwwyf53muoww2geeqr55vvhpcpt2vfo6f7xp6zcnh7su";
 
+// Token B configuration
 let decimals_1 = 9;
 let TOKEN_NAME_1 = "Doge B Coin";
 let TOKEN_SYMBOL_1 = "DBC";
@@ -77,12 +84,14 @@ let METADATA_URI_1 =
 
 describe("Amm_Program", () => {
   before("derive PDAs", async () => {
+    // Airdrop SOL to other wallet
     await provider.connection.requestAirdrop(
       other.publicKey,
       AIRDROP_AMOUNT_SOL * LAMPORTS_PER_SOL
     );
     console.log("Airdrop Successfully");
 
+    // Derive mint PDAs for both tokens
     [mintA] = PublicKey.findProgramAddressSync(
       [Buffer.from("mint"), payer.publicKey.toBuffer()],
       program.programId
@@ -92,6 +101,7 @@ describe("Amm_Program", () => {
       [Buffer.from("mint"), other.publicKey.toBuffer()],
       program.programId
     );
+    // Derive extra metas PDAs
     [xMetasA] = PublicKey.findProgramAddressSync(
       [Buffer.from("extra-account-metas"), mintA.toBuffer()],
       program.programId
@@ -102,6 +112,7 @@ describe("Amm_Program", () => {
       program.programId
     );
 
+    // Derive associated token accounts
     userA = associatedAddress({
       mint: mintA,
       owner: provider.wallet.publicKey,
@@ -120,6 +131,7 @@ describe("Amm_Program", () => {
   });
 
   it("createMintAccount: initializes mint + ATA with zero balance", async () => {
+    // Create first token mint
     const sigA = await program.methods
       .createMintAccount(
         decimals_0,
@@ -149,6 +161,7 @@ describe("Amm_Program", () => {
       TOKEN_2022_ID
     );
 
+    // Create second token mint
     const sigB = await program.methods
       .createMintAccount(
         decimals_1,
@@ -177,6 +190,7 @@ describe("Amm_Program", () => {
       undefined,
       TOKEN_2022_ID
     );
+    // Verify initial balances are zero
     expect(acct.amount).to.eql(BigInt(0));
     expect(acct1.amount).to.eql(BigInt(0));
   });
@@ -184,6 +198,7 @@ describe("Amm_Program", () => {
   it("mint_tokens: mints fresh supply into the ATA", async () => {
     const mintAmount = new BN(1_000 * 10 ** decimals_0);
 
+    // Mint tokens to first user
     await program.methods
       .mintTokens(mintAmount)
       .accountsStrict({
@@ -202,6 +217,7 @@ describe("Amm_Program", () => {
       TOKEN_2022_ID
     );
 
+    // Create ATA for payer to hold token B
     payerBata = getAssociatedTokenAddressSync(
       mintB,
       payer.publicKey,
@@ -209,18 +225,19 @@ describe("Amm_Program", () => {
       TOKEN_2022_ID,
       ASSOCIATED_PROGRAM_ID
     );
-    // create & mint into it:
+
     await createAssociatedTokenAccountIdempotent(
       provider.connection,
       payer,
       mintB,
-      payer.publicKey /* owner = payer */,
+      payer.publicKey,
       undefined,
       TOKEN_2022_ID,
       ASSOCIATED_PROGRAM_ID,
-      /*allowOffCurve=*/ false
+      false
     );
 
+    // Mint tokens to payer's token B account
     await program.methods
       .mintTokens(mintAmount)
       .accountsStrict({
@@ -238,16 +255,19 @@ describe("Amm_Program", () => {
       undefined,
       TOKEN_2022_ID
     );
+    // Verify minted amounts
     expect(acct.amount).to.eql(BigInt(1_000 * 10 ** decimals_0));
     expect(acct1.amount).to.eql(BigInt(1_000 * 10 ** decimals_0));
   });
 
   it("Initialize the Liquidity pool", async () => {
+    // Derive pool PDA
     [poolPda] = PublicKey.findProgramAddressSync(
       [LIQUIDITY_POOL, mintA.toBuffer(), mintB.toBuffer()],
       program.programId
     );
 
+    // Create vault A for token A
     vaultA = getAssociatedTokenAddressSync(mintA, poolPda, true, TOKEN_2022_ID);
     await createAssociatedTokenAccountIdempotent(
       provider.connection,
@@ -260,6 +280,7 @@ describe("Amm_Program", () => {
       true
     );
 
+    // Create vault B for token B
     vaultB = getAssociatedTokenAddressSync(mintB, poolPda, true, TOKEN_2022_ID);
     await createAssociatedTokenAccountIdempotent(
       provider.connection,
@@ -272,6 +293,7 @@ describe("Amm_Program", () => {
       true
     );
 
+    // Derive LP mint PDA
     [lpMint] = PublicKey.findProgramAddressSync(
       [Buffer.from("lp_mint"), poolPda.toBuffer()],
       program.programId
@@ -282,6 +304,7 @@ describe("Amm_Program", () => {
     console.log("vaultB_ata : ", vaultB.toString());
     console.log("lpMintPda : ", lpMint.toString());
 
+    // Initialize liquidity pool
     await program.methods
       .initializeLiquidityPoolAmm("PBC/DBC", 30)
       .accountsStrict({
@@ -299,6 +322,7 @@ describe("Amm_Program", () => {
       .signers([payer])
       .rpc();
 
+    // Create user LP token account
     userLp = getAssociatedTokenAddressSync(
       lpMint,
       payer.publicKey,
@@ -323,6 +347,7 @@ describe("Amm_Program", () => {
     const tokenA = new anchor.BN(100).mul(PRECISION);
     const tokenB = new anchor.BN(400).mul(PRECISION);
 
+    // Get balances before adding liquidity
     const beforeA = await bal(userA);
     const beforeB = await bal(payerBata);
     const beforeVaultA = await bal(vaultA);
@@ -337,6 +362,7 @@ describe("Amm_Program", () => {
     console.log("beforeVaultB: ", beforeVaultB.toNumber());
     console.log("beforeLpSupply: ", beforeLpSupply.toString());
 
+    // Add liquidity to pool
     await program.methods
       .addLiquidityAmm(tokenA, tokenB)
       .accountsStrict({
@@ -357,6 +383,7 @@ describe("Amm_Program", () => {
       .signers([payer])
       .rpc();
 
+    // Get balances after adding liquidity
     const afterA = await bal(userA);
     const afterB = await bal(payerBata);
     const afterVaultA = await bal(vaultA);
@@ -371,20 +398,17 @@ describe("Amm_Program", () => {
     console.log("afterVaultB: ", afterVaultB.toNumber());
     console.log("afterLpSupply: ", afterLpSupply.toString());
 
+    // Verify token transfers
     expect(afterA).to.be.bignumber.eq(beforeA.sub(tokenA));
     expect(afterB).to.be.bignumber.eq(beforeB.sub(tokenB));
 
     expect(afterVaultA).to.be.bignumber.eq(beforeVaultA.add(tokenA));
     expect(afterVaultB).to.be.bignumber.eq(beforeVaultB.add(tokenB));
-
-    // const expectedLp = tokenA.mul(tokenB).sqr();
-    // expect(new anchor.BN(afterLpSupply.toString())).to.be.bignumber.eq(
-    //   new anchor.BN(beforeLpSupply.toString()).add(expectedLp)
-    // );
   });
 
   it("Swap Tokens", async () => {
     const amount_to_swap = new anchor.BN(10).mul(PRECISION);
+    // Get quote for swap
     const amount_out = await program.methods
       .quoteAmm(amount_to_swap)
       .accountsStrict({
@@ -394,6 +418,7 @@ describe("Amm_Program", () => {
       })
       .view();
 
+    // Get balances before swap
     const userA_beforeSwap = await bal(userA);
     const userB_beforeSwap = await bal(userB);
     const vaultA_beforeSwap = await bal(vaultA);
@@ -404,6 +429,7 @@ describe("Amm_Program", () => {
     console.log("vaultA_beforeSwap : ", vaultA_beforeSwap.toNumber());
     console.log("vaultB_beforeSwap : ", vaultB_beforeSwap.toNumber());
 
+    // Execute swap
     await program.methods
       .swapAmm(amount_to_swap, new anchor.BN(amount_out))
       .accountsStrict({
@@ -419,6 +445,7 @@ describe("Amm_Program", () => {
       })
       .rpc();
 
+    // Get balances after swap
     const userA_afterSwap = await bal(userA);
     const userB_afterSwap = await bal(userB);
     const vaultA_afterSwap = await bal(vaultA);
@@ -429,6 +456,7 @@ describe("Amm_Program", () => {
     console.log("vaultA_afterSwap : ", vaultA_afterSwap.toNumber());
     console.log("vaultB_afterSwap : ", vaultB_afterSwap.toNumber());
 
+    // Verify swap results
     expect(userA_afterSwap).to.be.bignumber.eq(
       userA_beforeSwap.sub(amount_to_swap)
     );
@@ -445,6 +473,7 @@ describe("Amm_Program", () => {
 
   it("Remove Liqudity", async () => {
     const remove_liquidity_amount = new anchor.BN(10).mul(PRECISION);
+    // Get pool state
     const pool = await program.account.liquidityPoolAmm.fetch(poolPda);
     const userA_before = await bal(userA);
     const userB_before = await bal(userB);
@@ -464,6 +493,7 @@ describe("Amm_Program", () => {
     console.log("vaultB_before : ", vaultB_before.toNumber());
     console.log("liqudity_before : ", liqudity_before.toString());
 
+    // Remove liquidity
     await program.methods
       .removeLiquidityAmm(remove_liquidity_amount)
       .accountsStrict({
@@ -481,6 +511,7 @@ describe("Amm_Program", () => {
       })
       .rpc();
 
+    // Get balances after removing liquidity
     const userA_after = await bal(userA);
     const userB_after = await bal(userB);
     const vaultA_after = await bal(vaultA);
@@ -495,6 +526,7 @@ describe("Amm_Program", () => {
     console.log("vaultB_after : ", vaultB_after.toNumber());
     console.log("liqudity_after : ", liqudity_after.toString());
 
+    // Calculate expected amounts
     const amountAout = remove_liquidity_amount
       .mul(reserveA)
       .div(new anchor.BN(liqudity_before.toString()));
@@ -505,6 +537,7 @@ describe("Amm_Program", () => {
     console.log("amountAout : ", amountAout.toNumber());
     console.log("amountBout : ", amountBout.toNumber());
 
+    // Verify liquidity removal
     expect(userA_after).to.be.bignumber.eq(userA_before.add(amountAout));
     expect(userB_after).to.be.bignumber.eq(userB_before.add(amountBout));
     expect(vaultA_after).to.be.bignumber.eq(vaultA_before.sub(amountAout));
@@ -515,6 +548,7 @@ describe("Amm_Program", () => {
   });
 });
 
+// Helper function to derive associated token address
 function associatedAddress({
   mint,
   owner,

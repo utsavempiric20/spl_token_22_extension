@@ -7,10 +7,12 @@ import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { getAccount } from "@solana/spl-token";
 import { expect, assert } from "chai";
 
+// Token-2022 program ID
 const TOKEN_2022_PROGRAM_ID = new anchor.web3.PublicKey(
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 );
 
+// Helper function to derive associated token address
 function associatedAddress({
   mint,
   owner,
@@ -37,6 +39,7 @@ describe("spl_program", () => {
   let ata: PublicKey;
   let extraMetasAccount: PublicKey;
 
+  // Token configuration
   const decimals = 9;
   const METADATA_URI =
     "https://amethyst-abstract-toad-183.mypinata.cloud/ipfs/bafkreibdcplpnxbet4kfzk2qo33yn6xi3l4hlppudmr742kvjsc5mafkh4";
@@ -44,18 +47,19 @@ describe("spl_program", () => {
   const TOKEN_SYMBOL = "MW";
 
   before(async () => {
+    // Derive mint PDA
     [mintPda, mintBump] = PublicKey.findProgramAddressSync(
       [Buffer.from("mint"), provider.wallet.publicKey.toBuffer()],
       program.programId
     );
 
-    // Derive the extra metas account PDA using the mint PDA
+    // Derive extra metas account PDA
     [extraMetasAccount] = PublicKey.findProgramAddressSync(
       [Buffer.from("extra-account-metas"), mintPda.toBuffer()],
       program.programId
     );
 
-    // Derive the associated token account (ATA) for the mint PDA
+    // Derive associated token account
     ata = associatedAddress({
       mint: mintPda,
       owner: provider.wallet.publicKey,
@@ -63,6 +67,7 @@ describe("spl_program", () => {
   });
 
   it("createMintAccount: initializes mint + ATA with zero balance", async () => {
+    // Create mint account with metadata
     await program.methods
       .createMintAccount(decimals, TOKEN_NAME, TOKEN_SYMBOL, METADATA_URI)
       .accountsStrict({
@@ -79,7 +84,7 @@ describe("spl_program", () => {
       .signers([payer])
       .rpc();
 
-    // Check ATA balance is zero
+    // Verify initial balance is zero
     const acct = await getAccount(
       provider.connection,
       ata,
@@ -92,6 +97,7 @@ describe("spl_program", () => {
   it("mint_tokens: mints fresh supply into the ATA", async () => {
     const mintAmount = new BN(1_000 * 10 ** decimals);
 
+    // Mint tokens to ATA
     await program.methods
       .mintTokens(mintAmount)
       .accountsStrict({
@@ -103,6 +109,7 @@ describe("spl_program", () => {
       .signers([payer])
       .rpc();
 
+    // Verify minted amount
     const acct = await getAccount(
       provider.connection,
       ata,
@@ -115,6 +122,7 @@ describe("spl_program", () => {
   it("burn_tokens: burns a portion of the supply", async () => {
     const burnAmount = new BN(200 * 10 ** decimals);
 
+    // Burn tokens from ATA
     await program.methods
       .burnTokens(burnAmount)
       .accountsStrict({
@@ -126,6 +134,7 @@ describe("spl_program", () => {
       .signers([payer])
       .rpc();
 
+    // Verify remaining balance
     const acct = await getAccount(
       provider.connection,
       ata,
@@ -137,7 +146,7 @@ describe("spl_program", () => {
   });
 
   it("freeze and thaw the token account", async () => {
-    // Freeze
+    // Freeze token account
     await program.methods
       .freezeTokenAccount()
       .accountsStrict({
@@ -149,7 +158,7 @@ describe("spl_program", () => {
       .signers([payer])
       .rpc();
 
-    // Thaw
+    // Thaw token account
     await program.methods
       .thawTokenAccount()
       .accountsStrict({
@@ -162,43 +171,43 @@ describe("spl_program", () => {
       .rpc();
   });
 
-  // it("close_token_account: burns remaining and reclaims rent", async () => {
-  //   // Burn the remainder so ATA balance = 0
-  //   const remaining = (1_000_000 - 200) * 10 ** decimals;
-  //   await program.methods
-  //     .burnTokens(new BN(remaining))
-  //     .accountsStrict({
-  //       mint: mintPda,
-  //       from: ata,
-  //       authority: payer.publicKey,
-  //       tokenProgram: TOKEN_2022_PROGRAM_ID,
-  //     })
-  //     .signers([payer])
-  //     .rpc();
+  it("close_token_account: burns remaining and reclaims rent", async () => {
+    // Burn remaining tokens
+    const remaining = (1_000_000 - 200) * 10 ** decimals;
+    await program.methods
+      .burnTokens(new BN(remaining))
+      .accountsStrict({
+        mint: mintPda,
+        from: ata,
+        authority: payer.publicKey,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .signers([payer])
+      .rpc();
 
-  //   // Close the ATA
-  //   await program.methods
-  //     .closeTokenAccount()
-  //     .accountsStrict({
-  //       account: ata,
-  //       destination: payer.publicKey,
-  //       authority: payer.publicKey,1700000000030
-  //       tokenProgram: TOKEN_2022_PROGRAM_ID,
-  //     })
-  //     .signers([payer])
-  //     .rpc();
+    // Close token account
+    await program.methods
+      .closeTokenAccount()
+      .accountsStrict({
+        account: ata,
+        destination: payer.publicKey,
+        authority: payer.publicKey,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .signers([payer])
+      .rpc();
 
-  //   // Now fetching it should fail
-  //   try {
-  //     await getAccount(
-  //       provider.connection,
-  //       ata,
-  //       undefined,
-  //       TOKEN_2022_PROGRAM_ID
-  //     );
-  //     assert.fail("Expected getAccount to throw after closing");
-  //   } catch (err: any) {
-  //     expect(err.message).to.match(/failed to get account data/i);
-  //   }
-  // });
+    // Verify account is closed
+    try {
+      await getAccount(
+        provider.connection,
+        ata,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      assert.fail("Expected getAccount to throw after closing");
+    } catch (err: any) {
+      expect(err.message).to.match(/failed to get account data/i);
+    }
+  });
 });

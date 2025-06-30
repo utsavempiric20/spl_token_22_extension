@@ -9,11 +9,15 @@ use std::mem::size_of;
 
 use crate::state::*;
 
+// Precision for reward calculations (9 decimals)
 const PRECISION: u128 = 1_000_000_000;
+// Seconds in a day
 const SECONDS_PER_DAY: u128 = 86_400;
+// Lockup period in seconds (5 seconds)
 const LOCKUP_PERIOD: i64 = 5;
 
 /// STAKING POOL FUNCTIONS
+// Initialize a new staking pool
 pub fn initialize_pool(ctx: Context<InitializePool>, reward_rate_per_day: u128) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     pool.stake_mint = ctx.accounts.stake_mint.key();
@@ -22,6 +26,7 @@ pub fn initialize_pool(ctx: Context<InitializePool>, reward_rate_per_day: u128) 
     pool.reward_vault = ctx.accounts.reward_vault.key();
     pool.admin = ctx.accounts.admin.key();
     pool.total_staked = 0;
+    // Convert daily rate to per-second rate
     pool.reward_rate_per_day = reward_rate_per_day
         .checked_mul(PRECISION)
         .unwrap()
@@ -33,6 +38,7 @@ pub fn initialize_pool(ctx: Context<InitializePool>, reward_rate_per_day: u128) 
     Ok(())
 }
 
+// Stake tokens into the pool
 pub fn stake_tokens(ctx: Context<Stake>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.pool.paused, StakingError::PoolPaused);
 
@@ -41,10 +47,12 @@ pub fn stake_tokens(ctx: Context<Stake>, amount: u64) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let mint_decimals = ctx.accounts.stake_mint.decimals;
 
+    // Initialize user if first time staking
     if user.staker == Pubkey::default() {
         user.staker = ctx.accounts.staker.key();
     }
 
+    // Update global reward rate if tokens are staked
     if pool.total_staked > 0 {
         let elapsed = (now - pool.last_update_time) as u128;
         let reward: u128 = elapsed
@@ -61,14 +69,14 @@ pub fn stake_tokens(ctx: Context<Stake>, amount: u64) -> Result<()> {
     }
     pool.last_update_time = now;
 
-    // 2) Update user pending rewards
+    // Update user pending rewards
     let stored = pool.reward_per_token_stored;
     if user.amount_staked > 0 {
         let owed = pending_reward(user.amount_staked, stored, user.reward_debt)?;
         user.pending_rewards = user.pending_rewards.checked_add(owed).unwrap();
     }
 
-    // 3) Transfer stake tokens from user → vault
+    // Transfer stake tokens from user to vault
     let cpi_accounts = TransferChecked {
         from: ctx.accounts.user_stake_account.to_account_info(),
         to: ctx.accounts.stake_vault.to_account_info(),
@@ -78,7 +86,7 @@ pub fn stake_tokens(ctx: Context<Stake>, amount: u64) -> Result<()> {
     let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
     transfer_checked(cpi_ctx, amount, mint_decimals)?;
 
-    // 4) Update balances
+    // Update balances and reward debt
     pool.total_staked = pool.total_staked.checked_add(amount as u128).unwrap();
     user.amount_staked = user.amount_staked.checked_add(amount as u128).unwrap();
     user.reward_debt = user.amount_staked
@@ -95,16 +103,18 @@ pub fn stake_tokens(ctx: Context<Stake>, amount: u64) -> Result<()> {
     Ok(())
 }
 
+// Unstake tokens from the pool
 pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.pool.paused, StakingError::PoolPaused);
     let user = &mut ctx.accounts.user_stake;
     let now = Clock::get()?.unix_timestamp;
+    // Check lockup period
     require!(now - user.last_stake_time >= LOCKUP_PERIOD, StakingError::LockupNotExpired);
 
     let pool_account_info = ctx.accounts.pool.to_account_info();
     let stake_mint_key = ctx.accounts.stake_mint.key();
 
-    // We also need the PDA bump now, before taking a &mut:
+    // Get PDA bump for signing
     let (_pool_key, pool_bump) = Pubkey::find_program_address(
         &[POOL_SEED, stake_mint_key.as_ref()],
         ctx.program_id
@@ -118,7 +128,7 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
 
     require!(user.amount_staked >= (amount as u128), StakingError::InsufficientStaked);
 
-    // 1) Update global reward_per_token_stored
+    // Update global reward rate
     if pool.total_staked > 0 {
         let elapsed = (now - pool.last_update_time) as u128;
         let reward = elapsed
@@ -135,16 +145,16 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     }
     pool.last_update_time = now;
 
-    // 2) Update user pending rewards
+    // Update user pending rewards
     let stored = pool.reward_per_token_stored;
     let owed = pending_reward(user.amount_staked, stored, user.reward_debt)?;
     user.pending_rewards = user.pending_rewards.checked_add(owed).unwrap();
 
-    // 3) Decrease user stake and pool total
+    // Decrease user stake and pool total
     user.amount_staked = user.amount_staked.checked_sub(amount as u128).unwrap();
     pool.total_staked = pool.total_staked.checked_sub(amount as u128).unwrap();
 
-    // 4) Transfer stake tokens back: vault → user
+    // Transfer stake tokens back to user
     let cpi_accounts = TransferChecked {
         from: ctx.accounts.stake_vault.to_account_info(),
         to: ctx.accounts.user_stake_account.to_account_info(),
@@ -158,7 +168,7 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     );
     transfer_checked(cpi_ctx, amount, ctx.accounts.stake_mint.decimals)?;
 
-    // 5) Pay out pending rewards (if any)
+    // Pay out pending rewards if any
     if user.pending_rewards > 0 {
         if user.pending_rewards > (u64::MAX as u128) {
             return err!(StakingError::RewardOverflow);
@@ -180,7 +190,7 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
         user.pending_rewards = 0;
     }
 
-    // 6) Update reward debt for any remaining stake
+    // Update reward debt for remaining stake
     user.reward_debt = user.amount_staked
         .checked_mul(pool.reward_per_token_stored)
         .unwrap()
@@ -195,12 +205,14 @@ pub fn unstake_tokens(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     Ok(())
 }
 
+// Claim accumulated rewards
 pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
     require!(!ctx.accounts.pool.paused, StakingError::PoolPaused);
     let mut reward_amount: u64 = 0;
     let pool_account_info: AccountInfo<'_> = ctx.accounts.pool.to_account_info();
     let stake_mint_key = ctx.accounts.stake_mint.key();
 
+    // Get PDA bump for signing
     let (_pool_key, pool_bump) = Pubkey::find_program_address(
         &[POOL_SEED, stake_mint_key.as_ref()],
         ctx.program_id
@@ -212,7 +224,7 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
     let user = &mut ctx.accounts.user_stake;
     let now = Clock::get()?.unix_timestamp;
 
-    // 1) Update global reward_per_token_stored
+    // Update global reward rate
     if pool.total_staked > 0 {
         let elapsed = (now - pool.last_update_time) as u128;
         let reward = elapsed
@@ -229,12 +241,12 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
     }
     pool.last_update_time = now;
 
-    // 2) Update user pending rewards
+    // Update user pending rewards
     let stored = pool.reward_per_token_stored;
     let owed = pending_reward(user.amount_staked, stored, user.reward_debt)?;
     user.pending_rewards = user.pending_rewards.checked_add(owed).unwrap();
 
-    // 3) Transfer out pending rewards (if > 0)
+    // Transfer out pending rewards if > 0
     if user.pending_rewards > 0 {
         if user.pending_rewards > (u64::MAX as u128) {
             return err!(StakingError::RewardOverflow);
@@ -256,7 +268,7 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
         user.pending_rewards = 0;
     }
 
-    // 4) Update user reward debt
+    // Update user reward debt
     user.reward_debt = user.amount_staked
         .checked_mul(pool.reward_per_token_stored)
         .unwrap()
@@ -271,12 +283,13 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
     Ok(())
 }
 
+// Set new reward rate (admin only)
 pub fn set_reward_rate(ctx: Context<SetRewardRate>, new_rate_per_day: u64) -> Result<()> {
     require!(!ctx.accounts.pool.paused, StakingError::PoolPaused);
     let pool = &mut ctx.accounts.pool;
     let now = Clock::get()?.unix_timestamp;
 
-    // Before changing rate, accrue rewards up to now
+    // Accrue rewards before changing rate
     if pool.total_staked > 0 {
         let elapsed = (now - pool.last_update_time) as u128;
         let reward = elapsed
@@ -293,7 +306,7 @@ pub fn set_reward_rate(ctx: Context<SetRewardRate>, new_rate_per_day: u64) -> Re
     }
     pool.last_update_time = now;
 
-    // Set the new reward rate (scale by PRECISION)
+    // Set new reward rate (scale by PRECISION)
     pool.reward_rate_per_day = (new_rate_per_day as u128)
         .checked_mul(PRECISION)
         .unwrap()
@@ -302,6 +315,7 @@ pub fn set_reward_rate(ctx: Context<SetRewardRate>, new_rate_per_day: u64) -> Re
     Ok(())
 }
 
+// Deposit rewards into pool (admin only)
 pub fn deposit_rewards(ctx: Context<DepositRewards>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.pool.paused, StakingError::PoolPaused);
     let cpi_accounts = MintTo {
@@ -314,6 +328,7 @@ pub fn deposit_rewards(ctx: Context<DepositRewards>, amount: u64) -> Result<()> 
     Ok(())
 }
 
+// Pause the staking pool (admin only)
 pub fn pause_pool(ctx: Context<PausePool>) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     pool.paused = true;
@@ -324,6 +339,7 @@ pub fn pause_pool(ctx: Context<PausePool>) -> Result<()> {
     Ok(())
 }
 
+// Unpause the staking pool (admin only)
 pub fn unpause_pool(ctx: Context<PausePool>) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     pool.paused = false;
@@ -334,6 +350,7 @@ pub fn unpause_pool(ctx: Context<PausePool>) -> Result<()> {
     Ok(())
 }
 
+// Calculate pending rewards for a user
 #[inline(always)]
 fn pending_reward(
     amount_staked: u128,
@@ -350,6 +367,7 @@ fn pending_reward(
     Ok(gross / PRECISION)
 }
 
+// Emergency withdraw with 10% penalty
 pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let stake_mint_key = ctx.accounts.stake_mint.key();
@@ -358,6 +376,7 @@ pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
 
     require!(user.amount_staked > 0, StakingError::InsufficientStaked);
 
+    // Calculate penalty (10% slash)
     let principal_u64: u64 = user.amount_staked as u64;
     let slash = principal_u64 / 10;
     msg!("principal_u64: {}", principal_u64);
@@ -365,6 +384,7 @@ pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
     let payout = principal_u64 - slash;
     msg!("payout: {}", payout);
 
+    // Get PDA for signing
     let (_pool_pda, bump) = Pubkey::find_program_address(
         &[POOL_SEED, stake_mint_key.as_ref()],
         ctx.program_id
@@ -372,6 +392,7 @@ pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
     let seeds: &[&[u8]] = &[POOL_SEED, stake_mint_key.as_ref()];
     let signer_seeds: &[&[&[u8]]] = &[&[seeds[0], seeds[1], &[bump]]];
 
+    // Transfer remaining tokens to user
     let cpi_ctx = CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info(),
         TransferChecked {
@@ -384,6 +405,7 @@ pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
     );
     transfer_checked(cpi_ctx, payout, ctx.accounts.stake_mint.decimals)?;
 
+    // Reset user state
     pool.total_staked = pool.total_staked.saturating_sub(user.amount_staked);
     user.amount_staked = 0;
     user.pending_rewards = 0;
