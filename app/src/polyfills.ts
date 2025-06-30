@@ -4,5 +4,5 @@ window.Buffer = Buffer;
 window.global = window;
 
 if (!window.process) {
-  window.process = { env: {} };
+  window.process = { env: {} } as any;
 }
