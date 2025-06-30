@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigation } from "./Navigation";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import {
@@ -133,13 +133,15 @@ export const AMMOperations: React.FC = () => {
       const program = getProgram(provider);
       const poolPk = new PublicKey(poolAddress);
       const amountIn = new BN(parseFloat(swapAmount) * 10 ** 9);
+      console.log("swapTokenIn : ", swapTokenIn);
+      console.log("swapTokenOut : ", swapTokenOut);
 
       const amountOut = await program.methods
         .quoteAmm(amountIn)
         .accountsStrict({
           pool: poolPk,
-          tokenInMint: tokenAMint,
-          tokenOutMint: tokenBMint,
+          tokenInMint: swapTokenIn,
+          tokenOutMint: swapTokenOut,
         })
         .view();
 
@@ -153,12 +155,13 @@ export const AMMOperations: React.FC = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       autoQuote();
     }, 500);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poolAddress, swapAmount]);
 
   const initializeLiquidityPool = async () => {
@@ -250,17 +253,24 @@ export const AMMOperations: React.FC = () => {
         mint: tokenOutPk,
         owner: poolPk,
       });
+      console.log("vaultIn : ", vaultIn.toBase58());
+      console.log("vaultOut : ", vaultOut.toBase58());
 
       const userIn = await ensureAta(
         provider,
         tokenInPk,
         solanaWallet.publicKey
       );
+      console.log("tokenInPk : ", tokenInPk.toBase58());
+      console.log("tokenOutPk : ", tokenOutPk.toBase58());
+      console.log("userIn : ", userIn.toBase58());
+
       const userOut = await ensureAta(
         provider,
         tokenOutPk,
         solanaWallet.publicKey
       );
+      console.log("userOut : ", userOut.toBase58());
 
       const tx = await program.methods
         .swapAmm(amountIn, amountOut)
@@ -271,8 +281,8 @@ export const AMMOperations: React.FC = () => {
           vaultOut: vaultOut,
           userIn: userIn,
           userOut: userOut,
-          tokenAMint: tokenInPk,
-          tokenBMint: tokenOutPk,
+          tokenAMint: tokenAMint,
+          tokenBMint: tokenBMint,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();

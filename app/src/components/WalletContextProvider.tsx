@@ -19,14 +19,16 @@ interface Props {
   children: ReactNode;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const WalletContext = createContext<{
-  wallet: any;
+  wallet: unknown;
   connected: boolean;
 }>({
   wallet: null,
   connected: false,
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useWalletContext = () => {
   const context = useContext(WalletContext);
   if (!context) {

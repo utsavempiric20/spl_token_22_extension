@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/spl.json`.
  */
 export type Spl = {
-  address: "E2a7JuaC9zT5SpkEWPUvVRGM9DRSWrWUhchsPnzSkTbR";
+  address: "9Lj9S2iWdGVH8tcX1gbChc4cnChspm3G8gbDCBW4r3VA";
   metadata: {
     name: "spl";
     version: "0.1.0";
@@ -1358,38 +1358,23 @@ export type Spl = {
   errors: [
     {
       code: 6000;
-      name: "mathOverflow";
-      msg: "math overflow";
+      name: "insufficientStaked";
+      msg: "Not enough staked balance.";
     },
     {
       code: 6001;
-      name: "invalidFee";
-      msg: "invalid fee";
+      name: "rewardOverflow";
+      msg: "Pending rewards exceed maximum payout limit.";
     },
     {
       code: 6002;
-      name: "excessiveB";
-      msg: "token-b amount exceeds optimum";
+      name: "poolPaused";
+      msg: "Pool is currently paused.";
     },
     {
       code: 6003;
-      name: "invalidLp";
-      msg: "lp amount invalid";
-    },
-    {
-      code: 6004;
-      name: "emptyPool";
-      msg: "pool reserves are zero";
-    },
-    {
-      code: 6005;
-      name: "slippageExceeded";
-      msg: "slippage tolerance exceeded";
-    },
-    {
-      code: 6006;
-      name: "invalidMint";
-      msg: "invalid mint address in pool";
+      name: "lockupNotExpired";
+      msg: "Cannot unstake before lock-up expires.";
     }
   ];
   types: [

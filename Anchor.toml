@@ -4,21 +4,21 @@
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-spl = "E2a7JuaC9zT5SpkEWPUvVRGM9DRSWrWUhchsPnzSkTbR"
+[programs.devnet]
+spl = "9Lj9S2iWdGVH8tcX1gbChc4cnChspm3G8gbDCBW4r3VA"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [workspace]
 members = ["programs/spl"]
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/amm.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/spl.ts tests/stake.ts"
 
 [test]
 startup_wait = 5000

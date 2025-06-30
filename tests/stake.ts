@@ -87,7 +87,7 @@ describe("staking_program", () => {
     expect(mintInfo.mintAuthority!.equals(payer.publicKey)).to.be.true;
 
     await program.methods
-      .initializePoolStake(new BN(864_000))
+      .initializePoolStake(new BN(86_400))
       .accountsStrict({
         admin: payer.publicKey,
         stakeMint: mintPda,
@@ -104,7 +104,7 @@ describe("staking_program", () => {
       .rpc();
 
     await program.methods
-      .setRewardRateStake(new BN(864_000))
+      .setRewardRateStake(new BN(86_400))
       .accountsStrict({
         admin: payer.publicKey,
         pool: poolPda,
@@ -152,6 +152,7 @@ describe("staking_program", () => {
     await sleep(10_000);
 
     const before = await bal(userAta);
+    console.log("before :", before.toNumber());
 
     await program.methods
       .claimRewardsStake()
@@ -170,6 +171,8 @@ describe("staking_program", () => {
       .rpc();
 
     const after = await bal(userAta);
+    console.log("after : ", after.toNumber());
+
     const earned = after.sub(before);
 
     expect(earned.gt(new BN(0))).to.be.true;

@@ -8,8 +8,11 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
 import type { Idl } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
+
 import { Navigation } from "./Navigation";
 
 import idl from "../idl/spl.json";
@@ -24,7 +27,7 @@ function associatedAddress({
 }): PublicKey {
   return PublicKey.findProgramAddressSync(
     [owner.toBuffer(), TOKEN_2022_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-    ASSOCIATED_PROGRAM_ID
+    ASSOCIATED_TOKEN_PROGRAM_ID
   )[0];
 }
 
@@ -48,7 +51,7 @@ export const StakingOperations: React.FC = () => {
   const [depositAmt, setDepositAmt] = useState("0");
   const [newRewardRate, setNewRewardRate] = useState("0");
   const [isPaused, setIsPaused] = useState(false);
-
+  const PRECISION = new BN(10).pow(new BN(9));
   const getProvider = () => {
     if (!wallet.publicKey) throw new Error("Wallet not connected!");
     const anchorWallet = wallet as unknown as AnchorWallet;
@@ -105,7 +108,7 @@ export const StakingOperations: React.FC = () => {
           rewardVault,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
@@ -140,8 +143,9 @@ export const StakingOperations: React.FC = () => {
         owner: wallet.publicKey,
       });
 
+      const stakeLamports = new BN(Number(stakeAmount)).mul(PRECISION);
       const tx = await program.methods
-        .stake(new BN(amount))
+        .stake(stakeLamports)
         .accountsStrict({
           staker: wallet.publicKey,
           stakeMint: stakeMintPk,
@@ -151,7 +155,7 @@ export const StakingOperations: React.FC = () => {
           userStake: userStakePda,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
@@ -188,8 +192,9 @@ export const StakingOperations: React.FC = () => {
       const rewardVault = stakeVault;
       const userRewardAta = userStakeAta;
 
+      const unstakeLamports = new BN(Number(unstakeAmount)).mul(PRECISION);
       const tx = await program.methods
-        .unstake(new BN(amount))
+        .unstake(unstakeLamports)
         .accountsStrict({
           staker: wallet.publicKey,
           stakeMint: stakeMintPk,
@@ -202,7 +207,7 @@ export const StakingOperations: React.FC = () => {
           userRewardAccount: userRewardAta,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
@@ -221,6 +226,7 @@ export const StakingOperations: React.FC = () => {
       const provider = getProvider();
       const program = getProgram(provider);
       const stakeMintPk = new PublicKey(stakeMint);
+      console.log("stakeMintPk : ", stakeMintPk.toBase58());
 
       const poolPda = derivePoolPda(stakeMintPk);
       const userStakePda = deriveUserStakePda(poolPda, wallet.publicKey);
@@ -244,7 +250,7 @@ export const StakingOperations: React.FC = () => {
           rewardVault,
           userRewardAccount: userRewardAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         })
         .rpc();
       showStatus(`Rewards claimed! Tx: ${tx}`);
@@ -327,9 +333,9 @@ export const StakingOperations: React.FC = () => {
         mint: stakeMintPk,
         owner: poolPda,
       });
-
+      const depositLamports = new BN(Number(depositAmt)).mul(PRECISION);
       const tx = await program.methods
-        .depositRewardsAdmin(new BN(amount))
+        .depositRewardsAdmin(depositLamports)
         .accountsStrict({
           admin: wallet.publicKey,
           pool: poolPda,
@@ -400,6 +406,7 @@ export const StakingOperations: React.FC = () => {
       const stakeMintPk = new PublicKey(stakeMint);
 
       const poolPda = derivePoolPda(stakeMintPk);
+      console.log(rate);
 
       const tx = await program.methods
         .setRewardRateStake(new BN(rate))
