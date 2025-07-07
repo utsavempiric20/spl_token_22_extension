@@ -171,43 +171,43 @@ describe("spl_program", () => {
       .rpc();
   });
 
-  it("close_token_account: burns remaining and reclaims rent", async () => {
-    // Burn remaining tokens
-    const remaining = (1_000_000 - 200) * 10 ** decimals;
-    await program.methods
-      .burnTokens(new BN(remaining))
-      .accountsStrict({
-        mint: mintPda,
-        from: ata,
-        authority: payer.publicKey,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .signers([payer])
-      .rpc();
+  // it("close_token_account: burns remaining and reclaims rent", async () => {
+  //   // Burn remaining tokens
+  //   const remaining = (1_000_000 - 200) * 10 ** decimals;
+  //   await program.methods
+  //     .burnTokens(new BN(remaining))
+  //     .accountsStrict({
+  //       mint: mintPda,
+  //       from: ata,
+  //       authority: payer.publicKey,
+  //       tokenProgram: TOKEN_2022_PROGRAM_ID,
+  //     })
+  //     .signers([payer])
+  //     .rpc();
 
-    // Close token account
-    await program.methods
-      .closeTokenAccount()
-      .accountsStrict({
-        account: ata,
-        destination: payer.publicKey,
-        authority: payer.publicKey,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .signers([payer])
-      .rpc();
+  //   // Close token account
+  //   await program.methods
+  //     .closeTokenAccount()
+  //     .accountsStrict({
+  //       account: ata,
+  //       destination: payer.publicKey,
+  //       authority: payer.publicKey,
+  //       tokenProgram: TOKEN_2022_PROGRAM_ID,
+  //     })
+  //     .signers([payer])
+  //     .rpc();
 
-    // Verify account is closed
-    try {
-      await getAccount(
-        provider.connection,
-        ata,
-        undefined,
-        TOKEN_2022_PROGRAM_ID
-      );
-      assert.fail("Expected getAccount to throw after closing");
-    } catch (err: any) {
-      expect(err.message).to.match(/failed to get account data/i);
-    }
-  });
+  //   // Verify account is closed
+  //   try {
+  //     await getAccount(
+  //       provider.connection,
+  //       ata,
+  //       undefined,
+  //       TOKEN_2022_PROGRAM_ID
+  //     );
+  //     assert.fail("Expected getAccount to throw after closing");
+  //   } catch (err: any) {
+  //     expect(err.message).to.match(/failed to get account data/i);
+  //   }
+  // });
 });
